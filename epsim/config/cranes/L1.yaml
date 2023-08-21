@@ -1,0 +1,9 @@
+- code: H1
+  speed_h: 0.5
+  speed_v: 0.2
+  offset: 1
+  
+- code: H2
+  speed_h: 1.0
+  speed_v: 0.5
+  offset: 9

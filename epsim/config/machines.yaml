@@ -1,0 +1,51 @@
+cranes:
+  - 
+    code: "H1"
+    group: 1
+    offset: 1
+    speed: 1
+    speed_v: 0.5
+    min_offset: 1
+    max_offset: 6 
+  - 
+    code: "H2"
+    group: 1
+    offset: 5
+    speed: 1
+    speed_v: 0.5
+    min_offset: 6
+    max_offset: 10 
+
+op_types:
+  SL:
+    name: 上料
+    color: rgb(0,0,0)
+  CY:
+    name: 除油
+    color: rgb(0,255,0)
+  SX:
+    name: 水洗
+    color: rgb(0,0,255)
+  D1:
+    name: 镀铜
+    color: rgb(225,200,0)
+  D2:
+    name: 镀银
+    color: rgb(100,100,100)
+  XL:
+    name: 下料
+    color: rgb(255,255,255)
+
+slots:
+  - 
+    code: SL
+    offsets: !!python/tuple[1,]
+  -
+    code: XL
+    offsets: !!python/tuple[10,]
+  - 
+    code: CY
+    offsets: !!python/tuple[3,4]
+  - 
+    code: SX
+    offsets: !!python/tuple[5,6]    

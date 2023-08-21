@@ -1,0 +1,37 @@
+START: 1
+END: 15
+CRANES:
+- !!python/object/new:epsim.crane_info [ 1, H1, 1, 0.5, 1, 11, 3, 2]
+- !!python/object/new:epsim.crane_info [ 1, H2, 1, 0.5, 7, 15, 12, 2]
+JOBS: {P1: 3,P2: 1}
+PROCS:
+  P1:
+  - !!python/object/new:epsim.op_info [S, 1, 0]
+  - !!python/object/new:epsim.op_info [DN, 100, 5]
+  - !!python/object/new:epsim.op_info [SX, 60, 2]
+  - !!python/object/new:epsim.op_info [E, 1, 0]
+  P2:
+  - !!python/object/new:epsim.op_info [S, 1, 0]
+  - !!python/object/new:epsim.op_info [DT, 120, 5]
+  - !!python/object/new:epsim.op_info [SX, 80, 2]
+  - !!python/object/new:epsim.op_info [E, 1, 0]
+SLOTS:
+  S:
+  - !!python/object/new:epsim.slot_info [1, S, 1]
+  DN:
+  - !!python/object/new:epsim.slot_info [1, DN1, 3]
+  - !!python/object/new:epsim.slot_info [1, DN2, 4]
+  SX:
+  - !!python/object/new:epsim.slot_info [1, SX1, 7]
+  - !!python/object/new:epsim.slot_info [1, SX2, 8]
+  DT:
+  - !!python/object/new:epsim.slot_info [1, DT1, 11]
+  - !!python/object/new:epsim.slot_info [1, DT2, 12]
+  E:
+  - !!python/object/new:epsim.slot_info [1, E, 15]
+SLOT_COLORS:
+  S: [255, 255, 255]
+  DN: [105, 55, 255]
+  DT: [255, 255, 0]
+  SX: [5, 55, 255]
+  E: [55, 55, 55]

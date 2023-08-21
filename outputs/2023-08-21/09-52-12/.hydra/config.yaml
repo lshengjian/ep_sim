@@ -1,0 +1,41 @@
+slots:
+- code: S
+  color:
+  - 255
+  - 255
+  - 255
+  offsets:
+  - 1
+  - 2
+- code: SX
+  color:
+  - 5
+  - 25
+  - 255
+  offsets:
+  - 4
+  - 5
+  - 6
+- code: E
+  color:
+  - 255
+  - 255
+  - 255
+  offsets:
+  - 8
+  - 9
+cranes:
+- code: H1
+  speed_h: 0.5
+  speed_v: 0.2
+  offset: 1
+- code: H2
+  speed_h: 1.0
+  speed_v: 0.5
+  offset: 9
+FPS: 24
+SCREEN:
+- 800
+- 600
+ROWS: 4
+COLUMNS: 32
