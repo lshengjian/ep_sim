@@ -2,7 +2,7 @@ from __future__ import annotations
 
 import numpy as np
 
-TILE_PIXELS = 32
+#TILE_PIXELS = 32
 
 # Map of color names to RGB values
 COLORS = {
@@ -23,27 +23,18 @@ IDX_TO_COLOR = dict(zip(COLOR_TO_IDX.values(), COLOR_TO_IDX.keys()))
 
 # Map of object type to integers
 OBJECT_TO_IDX = {
-    "unseen": 0,
-    "empty": 1,
-    "wall": 2,
-    "floor": 3,
-    "door": 4,
-    "key": 5,
-    "ball": 6,
-    "box": 7,
-    "goal": 8,
-    "lava": 9,
-    "agent": 10,
+    "empty": 0,
+    "goal": 1,
+    "workpiece": 2,
+    "crane": 3,
+    "agent": 4,
+
+    "buffer": 10,
+    "tank": 11,
 }
 
 IDX_TO_OBJECT = dict(zip(OBJECT_TO_IDX.values(), OBJECT_TO_IDX.keys()))
 
-# Map of state names to integers
-STATE_TO_IDX = {
-    "open": 0,
-    "closed": 1,
-    "locked": 2,
-}
 
 # Map of agent direction indices to vectors
 DIR_TO_VEC = [
