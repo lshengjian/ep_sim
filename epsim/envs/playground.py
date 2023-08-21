@@ -14,10 +14,10 @@ class PlaygroundEnv(MiniGridEnv):
     """
 
     def __init__(self, max_steps=100, **kwargs):
-        self.size = 19
+        self.size = 24
         super().__init__(
             width=self.size,
-            height=3,
+            height=7,
             max_steps=max_steps,
             **kwargs,
         )
@@ -27,17 +27,14 @@ class PlaygroundEnv(MiniGridEnv):
     def _gen_grid(self, width, height):
         # Create the grid
         self.grid = Grid(width, height)
-
-        roomW = width // 3
-        roomH = height // 3
-
+        self.goal = self.place_obj(Goal())
 
         # Randomize the player start position and orientation
         self.place_agent()
 
         # Place random objects in the world
         types = ["workpiece", "tank"]
-        for i in range(0, 12):
+        for i in range(0, 3):
             objType = self._rand_elem(types)
             objColor = self._rand_elem(COLOR_NAMES)
             if objType == "workpiece":
@@ -52,5 +49,4 @@ class PlaygroundEnv(MiniGridEnv):
                 )
             self.place_obj(obj)
 
-        # No explicit mission in this environment
-        self.goal = self.place_obj(Goal)
+        

@@ -6,10 +6,9 @@ from enum import IntEnum
 
 class Actions(IntEnum):
     idle = 0
-    forward = 1
-    back = 2
-    up = 3
-    down = 4
+    left = 1
+    right = 2
+    forward = 3
 
 class StateTank(IntEnum):
     idle = 0

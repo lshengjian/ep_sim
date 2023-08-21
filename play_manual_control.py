@@ -6,8 +6,8 @@ import gymnasium as gym
 import pygame
 from gymnasium import Env
 
-from epsim.core.actions import Actions
-# from minigrid.minigrid_env import MiniGridEnv
+from epsim.core import Actions
+from epsim.envs.playground import PlaygroundEnv
 # from minigrid.wrappers import ImgObsWrapper, RGBImgPartialObsWrapper
 
 
@@ -49,11 +49,11 @@ class ManualControl:
 
     def reset(self, seed=None):
         self.env.reset(seed=seed)
-        self.env.render()
+        #self.env.render()
 
     def key_handler(self, event):
         key: str = event.key
-        print("pressed", key)
+        #print("pressed", key)
 
         if key == "escape":
             self.env.close()
@@ -63,22 +63,21 @@ class ManualControl:
             return
 
         key_to_action = {
-            "left": Actions.back,
-            "right": Actions.forward,
-            "up": Actions.up,
-            "down": Actions.down,
+            "left": Actions.left,
+            "right": Actions.right,
+            "up": Actions.forward
         }
         if key in key_to_action.keys():
             action = key_to_action[key]
             self.step(action)
         else:
-            print(key)
+            self.step(Actions.idle)
 
 
 if __name__ == "__main__":
 
-    env: 
-
+    env=PlaygroundEnv(render_mode="human")
+    env.reset(seed=42)
 
     manual_control = ManualControl(env, seed=1234)
     manual_control.start()

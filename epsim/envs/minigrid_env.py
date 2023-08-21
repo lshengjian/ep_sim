@@ -35,7 +35,7 @@ class MiniGridEnv(gym.Env):
         width: int | None = None,
         height: int | None = None,
         max_steps: int = 100,
-        agent_view_size: int = 7,
+        agent_view_size: int = 3,
         render_mode: str | None = None,
         screen_size: int | None = 640,
         highlight: bool = True,
@@ -51,10 +51,10 @@ class MiniGridEnv(gym.Env):
         assert width is not None and height is not None
 
         # Action enumeration for this environment
-        self.actions = Actions
+        #self.actions = Actions
 
         # Actions are discrete integer values
-        self.action_space = spaces.Discrete(len(self.actions))
+        self.action_space = spaces.Discrete(len(Actions))
 
         # Number of cells (width and height) in the agent view
         assert agent_view_size % 2 == 1
@@ -463,15 +463,32 @@ class MiniGridEnv(gym.Env):
         terminated = False
         truncated = False
 
+        
+        # Rotate left
+        if action == Actions.left:
+            self.agent_dir = (self.agent_dir + 3) % 4
+
+
+        # Rotate right
+        elif action == Actions.right:
+            self.agent_dir = (self.agent_dir + 1) % 4
+        
         # Get the position in front of the agent
         fwd_pos = self.front_pos
+
+        if fwd_pos[0]<0 or fwd_pos[0]>=self.grid.width or \
+            fwd_pos[1]<0 or fwd_pos[1]>=self.grid.height:
+            reward=-1
+            obs = self.gen_obs()
+
+            return obs, reward, terminated, truncated, {}
+
 
         # Get the contents of the cell in front of the agent
         fwd_cell = self.grid.get(*fwd_pos)
 
-
         # Move forward
-        if action == self.actions.forward:
+        if action == Actions.forward:
             if fwd_cell is None or fwd_cell.can_overlap():
                 self.agent_pos = tuple(fwd_pos)
             if fwd_cell is not None and fwd_cell.type == "goal":
@@ -496,14 +513,12 @@ class MiniGridEnv(gym.Env):
 
 
 
-        else:
-            raise ValueError(f"Unknown action: {action}")
+        # else:
+        #     raise ValueError(f"Unknown action: {action}")
 
         if self.step_count >= self.max_steps:
             truncated = True
 
-        if self.render_mode == "human":
-            self.render()
 
         obs = self.gen_obs()
 
@@ -523,8 +538,8 @@ class MiniGridEnv(gym.Env):
 
         grid = self.grid.slice(topX, topY, agent_view_size, agent_view_size)
 
-        for i in range(self.agent_dir + 1):
-            grid = grid.rotate_left()
+        # for i in range(self.agent_dir + 1):
+        #     grid = grid.rotate_left()
 
         # Process occluders and visibility
         # Note that this incurs some performance cost
@@ -682,14 +697,8 @@ class MiniGridEnv(gym.Env):
             bg.blit(surf, (offset / 2, 0))
 
             bg = pygame.transform.smoothscale(bg, (self.screen_size, self.screen_size))
+           
 
-            font_size = 22
-            text = self.mission
-            font = pygame.freetype.SysFont(pygame.font.get_default_font(), font_size)
-            text_rect = font.get_rect(text, size=font_size)
-            text_rect.center = bg.get_rect().center
-            text_rect.y = bg.get_height() - font_size * 1.5
-            font.render_to(bg, text_rect, text, size=font_size)
 
             self.window.blit(bg, (0, 0))
             pygame.event.pump()

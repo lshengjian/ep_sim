@@ -13,7 +13,7 @@ from epsim.utils.rendering import (
     highlight_img,
     point_in_rect,
     point_in_triangle,
-    rotate_fn,
+    rotate_fn
 )
 
 
@@ -72,24 +72,11 @@ class Grid:
         self.grid[j * self.width + i] = v
 
     def get(self, i: int, j: int) -> WorldObj | None:
-        assert 0 <= i < self.width
-        assert 0 <= j < self.height
+        assert 0 <= i < self.width,i
+        assert 0 <= j < self.height,j
         assert self.grid is not None
         return self.grid[j * self.width + i]
 
-    def rotate_left(self) -> Grid:
-        """
-        Rotate the grid to the left (counter-clockwise)
-        """
-
-        grid = Grid(self.height, self.width)
-
-        for i in range(self.width):
-            for j in range(self.height):
-                v = self.get(i, j)
-                grid.set(j, grid.height - 1 - i, v)
-
-        return grid
 
     def slice(self, topX: int, topY: int, width: int, height: int) -> Grid:
         """
