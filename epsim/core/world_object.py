@@ -25,7 +25,7 @@ class WorldObj:
         assert color in COLOR_TO_IDX, color
         self.type = type
         self.color = color
-        self.state = state
+        self.init_state = self.state=state
         self.carrying=None #for HandCrane
         self.attached=None #for workpiece
 
@@ -34,7 +34,8 @@ class WorldObj:
 
         # Current position of the object
         self._x:float = pos
-        self._y:float = 0
+        self._y:float = 1
+        self.reset()
 
     @property
     def x(self):
@@ -49,16 +50,17 @@ class WorldObj:
             pos=self.attached.y
         return pos     
     def reset(self):
-        pass
+        self._x=self.init_x
+        self._y=1
+        self.state=self.init_state
+
     
     def update(self)->int:
         return 0
 
-
-
-
     def __str__(self):
-        return f'({self.x:.1f},{self.y:.1f}) |{self.color}|{self.state}'
+        flag='[W]' if self.carrying!=None else ''
+        return f'({self.x:.1f},{self.y:.1f}) |{self.color}|{self.state} {flag}'
 
     def encode(self) -> tuple[int, int, int]:
         """Encode the a description of this object as a 3-tuple of integers"""
@@ -66,12 +68,12 @@ class WorldObj:
 
 class Crane(WorldObj):
     def __init__(self,  color: str ="white",pos:int=0,state: int = 0):
+        self.timer:int=0
         super().__init__("crane",color,pos,state)
-        self.reset()
         
 
     def reset(self):
-        self._x=self.init_x
+        super().reset()
         self._y=0
         self.timer=0
         
@@ -104,19 +106,21 @@ class Exchange(WorldObj):
 
 class Tank(WorldObj):
     def __init__(self,  color: str ="blue",pos:int=0,state: int = 0):
+        self.timer:int=0
         super().__init__("tank",color,pos,state)
-        self.reset()
+        
+
 
     def reset(self):
+        super().reset()
         self.timer=0
-        self._y=1
 
-    def update(self)->int:
+    def update(self):
         self.state=int(self.carring!=None)
-        if self.carring is  None:
-            return 0
+        if self.carrying is  None:
+            self.state=0
         self.timer+=1
-        return self.carring.state-self.timer
+        self.state=self.carrying.state-self.timer
 
 
  

@@ -41,34 +41,43 @@ class World:
         self.add2cache(start)
         end=End(color='green',pos=self.max_offset-1)
         self.add2cache(end)
-        wp=Workpiece(pos=0)
+        wp=Workpiece(pos=0,state=5)
         self.add2cache(wp)
         tank1=Tank(pos=3)
         self.add2cache(tank1)
         tank2=Tank(pos=4)
         self.add2cache(tank2)
         self.attach(wp,start)
+        assert wp.y==1 and  wp.x==1
+
         crane=Crane(pos=1)
         self.add2cache(crane)
-        self.pprint()
+        # self.pprint()
 
-        print('='*18)
-        self.move(crane,[0,1])
-        self.move(crane,[0,1])
-        self.pprint()
-        print('='*18)
+        # print('='*18)
+        self.move(crane,[0,1]) #y=1
+        self.move(crane,[0,1]) #y=2
+        assert wp.y==2 and  wp.x==1
+
+        # self.pprint()
+        # print('='*18)
 
         self.move(crane,[1,0])
         self.move(crane,[1,0])
-        self.move(crane,[1,0])
-        self.pprint()
-        print('='*18)
+        assert wp.y==2 and  wp.x==3
+        # self.pprint()
+        # 
 
         self.move(crane,[0,-1])
+        assert wp.y==1 and  wp.x==3
+        # self.pprint()
+        # print('='*18)
         self.move(crane,[0,-1])
         self.pprint()
-
-
+        
+        assert wp.y==1 and  wp.x==3
+        assert crane.y==0 and  crane.x==3
+        
 
 
 
@@ -77,9 +86,7 @@ class World:
         if obj.type!='workpiece' and obj.type!='crane':
             self.pos_objs[round(obj.x)]=obj
 
-    # def remove(self,  obj:WorldObj):
-    #     self.type_objs[obj.type].remove(obj)
-    #     self.pos_objs[round(obj.x)].remove(obj)
+
 
     def move(self, crane:Crane,dir=[1,0])->bool:
         if all(np.array(dir)==0):
@@ -110,17 +117,20 @@ class World:
         if math.isclose(crane.y,1) and crane.carrying!=None:
             pos=int(crane.x+0.5)
             slot=self.pos_objs.get(pos,None)
-            if slot==None:
+            if slot!=None:
                 self.translate(crane,slot)
                 
 
 
     def attach(self,wp:Workpiece,target:Start):
         if target.carrying is None:
-            target.carrying=wp
-            wp.attached=target
+            self.link(wp, target)
         else:
             UserWarning(f'{target} already have something')
+
+    def link(self, wp, target):
+        target.carrying=wp
+        wp.attached=target
 
     def translate(self,source:WorldObj,target:WorldObj):
         if target.type=='workpiece':
@@ -131,8 +141,7 @@ class World:
             return
 
         if source.carrying!=None :
-            target.carrying=source.carrying
-            target.carrying.attached=target
+            self.link(source.carrying, target)
             source.carrying=None
    
     def pprint(self):
