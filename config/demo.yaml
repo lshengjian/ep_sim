@@ -3,6 +3,6 @@ defaults:
   - cranes: L1
   
 FPS: 24
-SCREEN: [800,600]
-ROWS: 4
-COLUMNS: 32
+tile_size: [96,32]
+rows: 4
+cols: 32

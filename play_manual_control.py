@@ -71,13 +71,13 @@ class ManualControl:
             action = key_to_action[key]
             self.step(action)
         else:
-            self.step(Actions.idle)
+            self.step(Actions.stay)
 
 
 if __name__ == "__main__":
 
-    env=PlaygroundEnv(render_mode="human")
-    env.reset(seed=42)
+    env=PlaygroundEnv(render_mode="human",width=24)
+    env.reset(seed=123)
 
     manual_control = ManualControl(env, seed=1234)
     manual_control.start()

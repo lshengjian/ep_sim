@@ -1,9 +1,9 @@
 from __future__ import annotations
 
 from epsim.core.constants import COLOR_NAMES
-from epsim.core.grid import Grid
+from epsim.core.world import World
 
-from epsim.core.world_object import Workpiece, Tank, Agent,Goal
+from epsim.core.world_object import Workpiece, Tank, Goal
 from .minigrid_env import MiniGridEnv
 
 
@@ -13,11 +13,11 @@ class PlaygroundEnv(MiniGridEnv):
     This environment has no specific goals or rewards.
     """
 
-    def __init__(self, max_steps=100, **kwargs):
-        self.size = 24
+    def __init__(self,width=24, max_steps=100, **kwargs):
+        
         super().__init__(
-            width=self.size,
-            height=7,
+            width=width,
+            height=3,
             max_steps=max_steps,
             **kwargs,
         )
@@ -26,7 +26,7 @@ class PlaygroundEnv(MiniGridEnv):
 
     def _gen_grid(self, width, height):
         # Create the grid
-        self.grid = Grid(width, height)
+        self.grid = World(width, height)
         self.goal = self.place_obj(Goal())
 
         # Randomize the player start position and orientation
@@ -34,7 +34,7 @@ class PlaygroundEnv(MiniGridEnv):
 
         # Place random objects in the world
         types = ["workpiece", "tank"]
-        for i in range(0, 3):
+        for i in range(0, 12):
             objType = self._rand_elem(types)
             objColor = self._rand_elem(COLOR_NAMES)
             if objType == "workpiece":

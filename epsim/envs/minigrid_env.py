@@ -13,7 +13,7 @@ from gymnasium import spaces
 from gymnasium.core import ActType, ObsType
 
 from epsim.core import Actions, COLOR_NAMES, DIR_TO_VEC
-from epsim.core.grid import Grid
+from epsim.core.world import World
 from epsim.core.world_object import Point, WorldObj
 
 T = TypeVar("T")
@@ -31,34 +31,21 @@ class MiniGridEnv(gym.Env):
 
     def __init__(
         self,
-        grid_size: int | None = None,
         width: int | None = None,
         height: int | None = None,
         max_steps: int = 100,
         agent_view_size: int = 3,
         render_mode: str | None = None,
-        screen_size: int | None = 640,
         highlight: bool = True,
         tile_size: int = 32,
         agent_pov: bool = False,
     ):
 
-        # Can't set both grid_size and width/height
-        if grid_size:
-            assert width is None and height is None
-            width = grid_size
-            height = grid_size
-        assert width is not None and height is not None
-
-        # Action enumeration for this environment
-        #self.actions = Actions
-
         # Actions are discrete integer values
         self.action_space = spaces.Discrete(len(Actions))
 
         # Number of cells (width and height) in the agent view
-        assert agent_view_size % 2 == 1
-        assert agent_view_size >= 3
+        assert agent_view_size % 2 == 1 and  agent_view_size >= 3
         self.agent_view_size = agent_view_size
 
         # Observations are dictionaries containing an
@@ -78,15 +65,14 @@ class MiniGridEnv(gym.Env):
 
         # Range of possible rewards
         self.reward_range = (0, 1)
-
-        self.screen_size = screen_size
-        self.render_size = None
-        self.window = None
-        self.clock = None
-
         # Environment configuration
         self.width = width
         self.height = height
+
+        self.screen_size = (width*tile_size,tile_size*height)
+        self.render_size = None
+        self.window = None
+        self.clock = None
 
         assert isinstance(
             max_steps, int
@@ -97,8 +83,8 @@ class MiniGridEnv(gym.Env):
         self.agent_pos: np.ndarray | tuple[int, int] = None
         self.agent_dir: int = None
 
-        # Current grid and mission and carrying
-        self.grid = Grid(width, height)
+        # Current grid  and carrying
+        self.grid = World(width, height)
         self.carrying = None
 
         # Rendering attributes
@@ -264,7 +250,7 @@ class MiniGridEnv(gym.Env):
             top = (max(top[0], 0), max(top[1], 0))
 
         if size is None:
-            size = (self.grid.width, self.grid.height)
+            size = (self.grid.cols, self.grid.rows)
 
         num_tries = 0
 
@@ -277,8 +263,8 @@ class MiniGridEnv(gym.Env):
             num_tries += 1
 
             pos = (
-                self._rand_int(top[0], min(top[0] + size[0], self.grid.width)),
-                self._rand_int(top[1], min(top[1] + size[1], self.grid.height)),
+                self._rand_int(top[0], min(top[0] + size[0], self.grid.cols)),
+                self._rand_int(top[1], min(top[1] + size[1], self.grid.rows)),
             )
 
             # Don't place the object on top of another object
@@ -298,8 +284,8 @@ class MiniGridEnv(gym.Env):
         self.grid.set(pos[0], pos[1], obj)
 
         if obj is not None:
-            obj.init_pos = pos
-            obj.cur_pos = pos
+            obj.init_x = pos
+            obj._x = pos
 
         return pos
 
@@ -309,8 +295,8 @@ class MiniGridEnv(gym.Env):
         """
 
         self.grid.set(i, j, obj)
-        obj.init_pos = (i, j)
-        obj.cur_pos = (i, j)
+        obj.init_x = (i, j)
+        obj._x = (i, j)
 
     def place_agent(self, top=None, size=None, rand_dir=True, max_tries=math.inf):
         """
@@ -446,7 +432,7 @@ class MiniGridEnv(gym.Env):
 
         obs = self.gen_obs()
 
-        obs_grid, _ = Grid.decode(obs["image"])
+        obs_grid, _ = World.decode(obs["image"])
         obs_cell = obs_grid.get(vx, vy)
         world_cell = self.grid.get(x, y)
 
@@ -476,8 +462,8 @@ class MiniGridEnv(gym.Env):
         # Get the position in front of the agent
         fwd_pos = self.front_pos
 
-        if fwd_pos[0]<0 or fwd_pos[0]>=self.grid.width or \
-            fwd_pos[1]<0 or fwd_pos[1]>=self.grid.height:
+        if fwd_pos[0]<0 or fwd_pos[0]>=self.grid.cols or \
+            fwd_pos[1]<0 or fwd_pos[1]>=self.grid.rows:
             reward=-1
             obs = self.gen_obs()
 
@@ -489,8 +475,8 @@ class MiniGridEnv(gym.Env):
 
         # Move forward
         if action == Actions.forward:
-            if fwd_cell is None or fwd_cell.can_overlap():
-                self.agent_pos = tuple(fwd_pos)
+            #if fwd_cell is None or fwd_cell.can_overlap():
+            self.agent_pos = tuple(fwd_pos)
             if fwd_cell is not None and fwd_cell.type == "goal":
                 terminated = True
                 reward = self._reward()
@@ -521,6 +507,8 @@ class MiniGridEnv(gym.Env):
 
 
         obs = self.gen_obs()
+        if self.render_mode == "human":
+            self.render()
 
         return obs, reward, terminated, truncated, {}
 
@@ -548,12 +536,12 @@ class MiniGridEnv(gym.Env):
         #         agent_pos=(agent_view_size // 2, agent_view_size - 1)
         #     )
         # else:
-        vis_mask = np.ones(shape=(grid.width, grid.height), dtype=bool)
+        vis_mask = np.ones(shape=(grid.cols, grid.rows), dtype=bool)
 
         # Make it so the agent sees what it's carrying
         # We do this by placing the carried object at the agent's position
         # in the agent's partially observable view
-        agent_pos = grid.width // 2, grid.height - 1
+        agent_pos = grid.cols // 2, grid.rows - 1
         if self.carrying:
             grid.set(*agent_pos, self.carrying)
         else:
@@ -679,7 +667,7 @@ class MiniGridEnv(gym.Env):
                 pygame.init()
                 pygame.display.init()
                 self.window = pygame.display.set_mode(
-                    (self.screen_size, self.screen_size)
+                    self.screen_size
                 )
                 pygame.display.set_caption("minigrid")
             if self.clock is None:
@@ -687,20 +675,21 @@ class MiniGridEnv(gym.Env):
             surf = pygame.surfarray.make_surface(img)
 
             # Create background with mission description
-            offset = surf.get_size()[0] * 0.1
+            #offset = surf.get_size()[0] * 0.1
             # offset = 32 if self.agent_pov else 64
-            bg = pygame.Surface(
-                (int(surf.get_size()[0] + offset), int(surf.get_size()[1] + offset))
-            )
-            bg.convert()
-            bg.fill((255, 255, 255))
-            bg.blit(surf, (offset / 2, 0))
+            # bg = pygame.Surface(
+            #     (int(surf.get_size()[0] + offset), int(surf.get_size()[1] + offset))
+            # )
+            # bg.convert()
+            # bg.fill((255, 255, 255))
+            
 
-            bg = pygame.transform.smoothscale(bg, (self.screen_size, self.screen_size))
+            # bg = pygame.transform.smoothscale(bg, (self.screen_size, self.screen_size))
            
 
 
-            self.window.blit(bg, (0, 0))
+            #self.window.fill((255, 255, 255))
+            self.window.blit(surf, (0, 0))
             pygame.event.pump()
             self.clock.tick(self.metadata["render_fps"])
             pygame.display.flip()

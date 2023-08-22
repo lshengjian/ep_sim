@@ -4,7 +4,7 @@ import matplotlib.pyplot as plt
 
 import torch 
 from PIL import Image
-from einops import rearrange
+#from einops import rearrange
 from os import path
 transform=transforms.Compose([
             transforms.ToPILImage(),
