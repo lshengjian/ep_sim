@@ -4,8 +4,8 @@ import math
 from typing import Any, List,Dict
 from collections import defaultdict
 
-from epsim.core.world_object import  *
-
+from .world_object import  *
+from .crane import Crane
 
 
 class World:
@@ -14,32 +14,39 @@ class World:
     """
 
 
-    def __init__(self, max_offset:int=12,max_height:float=2.0):
-        self.max_offset: int = max_offset
-        self.max_height: float = max_height
-        self.pos_objs:Dict[int,WorldObj]={} #Start,End,Exchange,Tank
+    def __init__(self, max_offset:int=12,max_deep:float=2.0):
+        self.max_x: int = max_offset
+        self.max_y: float = max_deep
+        # self.cranes:List[Crane]=[]
+        # self.workpieces:List[Workpiece]=[]
+        self.pos_slots:Dict[int,WorldObj]={} #Start,End,Exchange,Tank
 
         self.type_objs:Dict[str,List[WorldObj]]=defaultdict(list)
         #self.grid: list[WorldObj | None] = [None] * (self.rows * self.cols)
     def on_bound(self,x:float,y:float):
-        return x>=0 and x<=self.max_offset and y>=0 and y<=self.max_height
+        return x>=0 and x<=self.max_x and y>=0 and y<=self.max_y
     
     def round(self,x:float)->int:
         return int(x+0.5)
     
+    def add2cache(self, obj:WorldObj):
+        self.type_objs[obj.type].append(obj)
+        if obj.type!='workpiece'and  obj.type!='crane':    
+            self.pos_slots[round(obj.x)]=obj 
+
     def build(self,cfg:"DictConfig"):
         self.type_objs.clear()
-        self.pos_objs.clear()
+        self.pos_slots.clear()
 
     def get_objs(self,type:str='type'):
-        return self.pos_objs[type]
+        return self.pos_slots[type]
 
     def _build(self):
         self.type_objs.clear()
-        self.pos_objs.clear()
+        self.pos_slots.clear()
         start=Start(pos=1)
         self.add2cache(start)
-        end=End(color='green',pos=self.max_offset-1)
+        end=End(color='green',pos=self.max_x-1)
         self.add2cache(end)
         wp=Workpiece(pos=0,state=5)
         self.add2cache(wp)
@@ -52,73 +59,73 @@ class World:
 
         crane=Crane(pos=1)
         self.add2cache(crane)
-        # self.pprint()
+        assert crane.y==2 and  wp.x==1
 
-        # print('='*18)
-        self.move(crane,[0,1]) #y=1
-        self.move(crane,[0,1]) #y=2
-        assert wp.y==2 and  wp.x==1
+        crane.set_command(Actions.up)
+        self.update()
+        #self.pprint()
+        assert wp.y==1 and  wp.x==1 and wp.attached==crane
+        self.update()
+        assert wp.y==0 and  wp.x==1 
+        
 
-        # self.pprint()
-        # print('='*18)
+        crane.set_command(Actions.forward)
+        self.update()
+        self.update()
+        assert wp.y==0 and  wp.x==3
 
-        self.move(crane,[1,0])
-        self.move(crane,[1,0])
-        assert wp.y==2 and  wp.x==3
-        # self.pprint()
-        # 
 
-        self.move(crane,[0,-1])
+        crane.set_command(Actions.down)
+        self.update()
         assert wp.y==1 and  wp.x==3
         # self.pprint()
-        # print('='*18)
-        self.move(crane,[0,-1])
+        # print('='*18) 
+        self.update()
+        self.pprint()
+       
+        assert wp.y==1 and  wp.x==3
+        assert crane.y==2 and  crane.x==3
+
+        crane.set_command(Actions.stay)
+        self.update()
+        assert crane.y==2 and  crane.x==3
+        print('='*18)
         self.pprint()
         
-        assert wp.y==1 and  wp.x==3
-        assert crane.y==0 and  crane.x==3
-        
 
 
 
-    def add2cache(self, obj:WorldObj):
-        self.type_objs[obj.type].append(obj)
-        if obj.type!='workpiece' and obj.type!='crane':
-            self.pos_objs[round(obj.x)]=obj
-
-
-
-    def move(self, crane:Crane,dir=[1,0])->bool:
-        if all(np.array(dir)==0):
-            return False
-        x2:float=crane.x+dir[0]
-        y2:float=crane.y+dir[1]
-        
-        if not self.on_bound(x2,y2):
-            UserWarning(f'({x2},{y2} is out bound!')
-            return False
-
-        x1=crane.x
-        crane._x=x2
-        crane._y=y2
-        self.collide_check(crane)
+    def update(self)->bool:
+        cranes=self.type_objs['crane']
+        for c in cranes:
+            c.step(self)
+        slots=self.pos_slots.values()
+        for s in slots:
+            s.step(self)
         return True
 
-    def collide_check(self,  crane:Crane):
+
+    def collide_check(self, crane:Crane)->bool:
         #assert obj.carrying!=None and  math.isclose(obj.y,self.max_height)
         #assert obj.carrying==None and  math.isclose(obj.y,0)
-        if math.isclose(crane.y,1) and crane.carrying==None:
-            pos=int(crane.x+0.5)
-            slot=self.pos_objs.get(pos,None)
-            if slot!=None:
+        collide=False
+        pos=self.round(crane.x)
+        slot=self.pos_slots.get(pos,None)
+        if slot!=None and math.isclose(crane.y,1):
+            if crane.carrying==None and crane.tip=='↑':
                 self.translate(slot,crane)
-                return
-        
-        if math.isclose(crane.y,1) and crane.carrying!=None:
-            pos=int(crane.x+0.5)
-            slot=self.pos_objs.get(pos,None)
-            if slot!=None:
+            elif crane.carrying!=None and crane.tip=='↓':
                 self.translate(crane,slot)
+        cranes=self.type_objs['crane']
+        for c in cranes:
+            if c==self:
+                continue
+            if abs(c.x-crane.x)<2:
+                collide=True
+                UserWarning(f'{c} too close to {crane}')
+                break
+
+        return collide
                 
 
 

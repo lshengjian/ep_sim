@@ -6,9 +6,9 @@ import numpy as np
 
 from epsim.core.constants import (
     COLOR_TO_IDX,
-    COLORS,
-    IDX_TO_COLOR,
-    IDX_TO_OBJECT,
+    Actions,
+    DIR_TO_VEC,
+    Directions,
     OBJECT_TO_IDX,
 )
 
@@ -55,28 +55,19 @@ class WorldObj:
         self.state=self.init_state
 
     
-    def update(self)->int:
-        return 0
+    def step(self,world)->bool:
+        self.state=int(self.carrying!=None)
+        return True
 
     def __str__(self):
-        flag='[W]' if self.carrying!=None else ''
-        return f'({self.x:.1f},{self.y:.1f}) |{self.color}|{self.state} {flag}'
+        flag='[W]' if self.carrying!=None else ' '
+        return f'{flag}({self.x:.1f},{self.y:.1f})|{self.color}|{self.state} '
 
     def encode(self) -> tuple[int, int, int]:
         """Encode the a description of this object as a 3-tuple of integers"""
         return (OBJECT_TO_IDX[self.type], COLOR_TO_IDX[self.color], self.state)
 
-class Crane(WorldObj):
-    def __init__(self,  color: str ="white",pos:int=0,state: int = 0):
-        self.timer:int=0
-        super().__init__("crane",color,pos,state)
-        
-
-    def reset(self):
-        super().reset()
-        self._y=0
-        self.timer=0
-        
+  
 
 
      
@@ -92,8 +83,6 @@ class Start(WorldObj):
     def __init__(self,  color: str ="grey",pos:int=0,state: int = 0):
         super().__init__("start",color,pos,state)
     
-    def update(self)->int:
-        self.state=int(self.carring!=None)
 
 
 class End(WorldObj):
@@ -115,12 +104,13 @@ class Tank(WorldObj):
         super().reset()
         self.timer=0
 
-    def update(self):
-        self.state=int(self.carring!=None)
-        if self.carrying is  None:
-            self.state=0
-        self.timer+=1
-        self.state=self.carrying.state-self.timer
+    def step(self,world)->bool:
+        self.state=0
+        if self.carrying!=None:
+            self.timer+=1
+            self.state=self.carrying.state-self.timer
+            return True
+        return False
 
 
  

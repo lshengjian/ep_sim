@@ -8,10 +8,19 @@ from enum import IntEnum
 class Actions(IntEnum):
     stay = 0
     forward = 1
-    back = 2
-    up = 3
-    down = 4
-
+    down = 2
+    back = 3
+    up = 4
+    
+Directions = ["o","→","↓","←","↑"]
+  
+DIR_TO_VEC = [ 
+    np.array((0, 0)),
+    np.array((1, 0)),
+    np.array((0, 1)),
+    np.array((-1, 0)),
+    np.array((0, -1)),
+]# （0，0） at left top
 # Map of color names to RGB values
 COLORS = {
     "red": np.array([255, 0, 0]),
@@ -47,13 +56,4 @@ IDX_TO_OBJECT = dict(zip(OBJECT_TO_IDX.values(), OBJECT_TO_IDX.keys()))
 
 
 # Map of agent direction indices to vectors
-# DIR_TO_VEC = [
-#     # Pointing right (positive X)
-#     np.array((1, 0)),
-#     # Down (positive Y)
-#     np.array((0, 1)),
-#     # Pointing left (negative X)
-#     np.array((-1, 0)),
-#     # Up (negative Y)
-#     np.array((0, -1)),
-# ]
+
