@@ -26,7 +26,7 @@ class Renderer(object):
 
 
     def on_click(self,pos):
-        for c_id, crane in self.world.get_component(Crane):
+        for c_id, crane in self.world.get_component(CraneData):
             x,y=get_pos(crane.offset)
             y+=(1-crane.height)*CELL_SIZE
             rect=Rect(round(x),round(y),CELL_SIZE,CELL_SIZE*0.2)
@@ -38,12 +38,12 @@ class Renderer(object):
 
                 #print(crane)
                 return
-        for _, slot in self.world.get_component(Slot): 
+        for _, slot in self.world.get_component(SlotData): 
             left,top=get_pos(slot.offset)
             rect=Rect(left,top,CELL_SIZE,CELL_SIZE)
             if rect.left<=pos[0]<=rect.right and rect.top<=pos[1]<=rect.bottom:
                 if self.selected_crane_id:
-                    crane=self.world.component_for_entity(self.selected_crane_id,Crane)
+                    crane=self.world.component_for_entity(self.selected_crane_id,CraneData)
                     df=slot.offset-crane.offset
                     esper.dispatch_event('crane_move',(crane.code,df))
                     #print(f'{crane.code}-->{df}')
@@ -95,7 +95,7 @@ class Renderer(object):
             self.debug_slots()
         
     def debug_cranes(self):
-        for crane_id, crane in self.world.get_component(Crane):
+        for crane_id, crane in self.world.get_component(CraneData):
             cs=self.game.world.components_for_entity(crane_id)
             info=''
             for c in cs:
@@ -107,7 +107,7 @@ class Renderer(object):
         top=50+len(self.game.crane_mgr.CRANES)*20+30
         
         ws=[]
-        for s_id, s in self.world.get_component(Slot):
+        for s_id, s in self.world.get_component(SlotData):
             ws.append((s.offset,s_id))
         ws=sorted(ws,key=lambda x: x[0])
         k=0

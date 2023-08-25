@@ -5,7 +5,7 @@ from ..core.consts import *
 
 def draw_cranes(game,screen,secect_id):
     world=game.world
-    for crane_id, crane in world.get_component(Crane):
+    for crane_id, crane in world.get_component(CraneData):
         x,y=get_pos(crane.offset)
         y+=round((1.02-crane.height)*CELL_SIZE)
         rect=Rect(round(x),round(y),CELL_SIZE,CELL_SIZE*0.25)

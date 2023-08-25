@@ -1,8 +1,0 @@
-defaults:
-  - slots: L1
-  - cranes: L1
-  
-FPS: 24
-tile_size: [96,32]
-rows: 4
-cols: 32

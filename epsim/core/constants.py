@@ -21,39 +21,31 @@ DIR_TO_VEC = [
     np.array((-1, 0)),
     np.array((0, -1)),
 ]# （0，0） at left top
-# Map of color names to RGB values
-COLORS = {
-    "red": np.array([255, 0, 0]),
-    "green": np.array([0, 255, 0]),
-    "blue": np.array([0, 0, 255]),
-    "purple": np.array([112, 39, 195]),
-    "yellow": np.array([255, 255, 0]),
-    "grey": np.array([100, 100, 100]),
-    "white": np.array([255, 255, 255]),
-}
 
-COLOR_NAMES = sorted(list(COLORS.keys()))
+'''
+EMPTY="empty"
+BUFF_START="start" #上料位
+BUFF_END="end"     #下料位
+BUFF_SWAP="swap"   #两个区间的交换位，同时属于两个区间组
+TANK="tank"        #加工位：电镀、除油、水洗、烘干等
+CRANE="crane"
+WORKPIECE="workpiece" #工件，待电镀的物料
 
-# Used to map colors to integers
-COLOR_TO_IDX = {"red": 0, "green": 1, "blue": 2, "purple": 3, "yellow": 4, "grey": 5,"white":6}
-
-IDX_TO_COLOR = dict(zip(COLOR_TO_IDX.values(), COLOR_TO_IDX.keys()))
 
 # Map of object type to integers
 OBJECT_TO_IDX = {
-    "empty": 0,
-    "start": 1,
-    "tank": 2,
-    "exchange": 3,
-    "end": 4,
+    EMPTY: 0,
+    BUFF_START: 1,
+    TANK: 2,
+    BUFF_SWAP: 3,
+    BUFF_END: 4,
         
-    "workpiece": 5,
-    "crane": 6,
+    WORKPIECE: 5,
+    CRANE: 6,
     
 }
 
 IDX_TO_OBJECT = dict(zip(OBJECT_TO_IDX.values(), OBJECT_TO_IDX.keys()))
+'''
 
-
-# Map of agent direction indices to vectors
 

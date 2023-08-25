@@ -2,6 +2,7 @@
 __pycache__/
 data/
 outputs/
+.pytest_cache/
 *.py[cod]
 *$py.class
 

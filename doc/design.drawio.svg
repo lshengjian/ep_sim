@@ -1,0 +1,31 @@
+<svg host="65bd71144e" xmlns="http://www.w3.org/2000/svg" xmlns:xlink="http://www.w3.org/1999/xlink" version="1.1" width="161px" height="90px" viewBox="-0.5 -0.5 161 90" content="&lt;mxfile&gt;&lt;diagram id=&quot;4bTFj9A3SkkF_GZtCXLm&quot; name=&quot;Page-1&quot;&gt;7Zbfb5swEMf/GqTtYRM/StQ9FtJtD6lULZX27IIDpxgfMpcm6V+/M5gQQqJFWR8nocj39dnc3eeM40VptfthRF0+YS6VF/r5zovmXhjG/jf+tcK+E6Ig7ITCQN5JwSAs4V060XfqBnLZjBwJURHUYzFDrWVGI00Yg9ux2wrV+K21KOREWGZCTdXfkFPZqfexP+g/JRRl/+bAdzOV6J2d0JQix+2RFD16UWoQqRtVu1QqW7u+Lt267xdmD4EZqemaBa7ub0JtXG5zaGpBWemFM4/B+F6UuFBp3+ffbKFSQrOVrFDT0s0EbAsFheZxxgFIw8KbNARcugc3QVizmpWg8oXY48aG2ZDI1r2VlGjgnbcVyu3J04ZcF3BUxx5Lu5JlG6aRDfs897kHJ9KT2I0cF6IhJ2SolKgbeD2kUQlTgE6QCCvn5CrF6cjdxWoHB4bc+xIrSWbPLv2CHvv+0BidvR26KJg5rTzqoPuZa17XuMVh64EtDxze86ijCWoSzZo3fFgAVyKcKVv8F9Z4XNA57pw5tTwMrmWKChnwXGPXCKDUidT3gpIrutgJ3G0Z6GLR+szvBuWXS99KyGtXqj0oJeS51JYikiDRIbN8agRNbX3ihB+uYup/jb2YA0/ZDgabH+tuKEXNuQho6Unuh61s6FrU4XnUDm04u45s+AFk7yZkJ+QUtEQ6cv03K7gJW8UAlBw4vViM8y/BhGU0ZRmd4abEq1TP2AAB2v1N53vC82/Ixj0JupQGPghlHF55SP+dZHyGZGLvDUkl5p9oX8vPfGDtfcfD/+fzdqizK7+8N5xPNocLvJ07+hcUPf4B&lt;/diagram&gt;&lt;/mxfile&gt;">
+    <defs>
+        <clipPath id="mx-clip-4-31-152-26-0">
+            <rect x="4" y="31" width="152" height="26"/>
+        </clipPath>
+        <clipPath id="mx-clip-4-65-152-26-0">
+            <rect x="4" y="65" width="152" height="26"/>
+        </clipPath>
+    </defs>
+    <g>
+        <path d="M 0 26 L 0 0 L 160 0 L 160 26" fill="rgb(255, 255, 255)" stroke="rgb(0, 0, 0)" stroke-miterlimit="10" pointer-events="all"/>
+        <path d="M 0 26 L 0 86 L 160 86 L 160 26" fill="none" stroke="rgb(0, 0, 0)" stroke-miterlimit="10" pointer-events="none"/>
+        <path d="M 0 26 L 160 26" fill="none" stroke="rgb(0, 0, 0)" stroke-miterlimit="10" pointer-events="none"/>
+        <g fill="rgb(0, 0, 0)" font-family="Helvetica" font-weight="bold" pointer-events="none" text-anchor="middle" font-size="12px">
+            <text x="79.5" y="17.5">
+                Dispatch
+            </text>
+        </g>
+        <g fill="rgb(0, 0, 0)" font-family="Helvetica" pointer-events="none" clip-path="url(#mx-clip-4-31-152-26-0)" font-size="12px">
+            <text x="5.5" y="43.5">
+                tasks:List&lt;Task&gt;
+            </text>
+        </g>
+        <path d="M 0 56 L 160 56" fill="none" stroke="rgb(0, 0, 0)" stroke-miterlimit="10" pointer-events="none"/>
+        <g fill="rgb(0, 0, 0)" font-family="Helvetica" pointer-events="none" clip-path="url(#mx-clip-4-65-152-26-0)" font-size="12px">
+            <text x="5.5" y="77.5">
+                + method(type): type
+            </text>
+        </g>
+    </g>
+</svg>

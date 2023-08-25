@@ -1,0 +1,14 @@
+products:
+- code: A
+  num: 3
+- code: B
+  num: 3
+
+max_x: 32
+max_deep: 2.0
+
+FPS: 24
+tile_size: [96,32]
+rows: 4
+cols: 32
+

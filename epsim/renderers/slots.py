@@ -1,13 +1,13 @@
 from pygame import gfxdraw,Rect
 from .comm import *
-from ..core.componets import Job,Slot,WithJob,Wait
+from ..core.componets import Job,SlotData,WithJob,Wait
 from ..core.consts import *
 
 kScale=0.618
 def draw_slots(game,screen):
     row=0
     world=game.world
-    for ent, s in world.get_component(Slot): 
+    for ent, s in world.get_component(SlotData): 
         #self.debug(ent, row)
         row+=1
         left,top=get_pos(s.offset)
