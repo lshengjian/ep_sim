@@ -1,7 +1,7 @@
 from __future__ import annotations
 from pathlib import Path
 
-from typing import List
+from typing import List,Dict
 from epsim.utils import split_field
 from epsim.core.componets import *
 #import pandas as pd
@@ -52,7 +52,8 @@ def _make_slots(data):
     rt:List[SlotData]=[]
     for i,d in enumerate(data):
         ds=d.split(',')
-        gs=tuple(split_field(ds[0]))
+        gs=map(int,split_field(ds[0]))
+        gs=tuple(gs)
         xs=tuple(split_field(ds[2]))
         rt.append(SlotData(id=i,group=gs,name=ds[1],offsets=xs))
     return rt
@@ -61,22 +62,23 @@ def _make_cranes(data):
     rt:List[CraneData]=[]
     for i,d in enumerate(data):
         ds=d.split(',')
-        rt.append(CraneData(id=i,name=ds[0],offset=int(ds[1]), \
-                            speed_x=float(ds[2]), \
-                            speed_y=float(ds[3]) ) )
+        rt.append(CraneData(id=i,group=int(ds[0]),name=ds[1], \
+                            offset=int(ds[2]), \
+                            speed_x=float(ds[3]), \
+                            speed_y=float(ds[4]) ) )
     return rt
 
 def prodct_operates(ps:List[ProcessData],product_code:str):
     rt=list(filter(lambda x:x.product_code==product_code,ps))
     return rt
 
-def next_operate(ps:List[ProcessData],start_idx:int=0):
-    rt=None
-    for op in ps:
-        if op.id>start_idx:
-            rt=op
-            break
-    return rt
+# def next_operate(ps:List[ProcessData],start_idx:int=0):
+#     rt=None
+#     for op in ps:
+#         if op.id>start_idx:
+#             rt=op
+#             break
+#     return rt
 
 def _make_procedures(data):
     rt:List[ProcessData]=[]
@@ -87,7 +89,7 @@ def _make_procedures(data):
                             time_max=int(ds[3]) ) )
     return rt
 
-def build_one(fn:str):
+def _make_one(fn:str):
     name,field_names,data=get_file_info(fn)
     rt=None
 
@@ -102,11 +104,11 @@ def build_one(fn:str):
         rt =  _make_procedures(data)
     return name,rt
 
-def build_all():
-    ds={}
+def build_config()->Dict[str,List[Index]]:
+    ds:Dict[str,List[Index]]={}
     fs=get_files()
     for f in fs:
-        name,data=build_one(f)
+        name,data=_make_one(f)
         ds[name]=data
     return ds  
 

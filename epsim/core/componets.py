@@ -40,12 +40,13 @@ class SlotData(Index):
     
 @component
 class CraneData(Index):
+   group:int=0
    name:str=''
    offset:int=0.0
    speed_x:float=1.0
    speed_y:float=1.0
    def __str__(self) -> str:
-        return f'[{self.offset}]{self.name} ({self.speed_x},{self.speed_x})'
+        return f'({self.group}){self.name} {self.offset} ({self.speed_x},{self.speed_x})'
    
 @component
 class ProcessData(Index):

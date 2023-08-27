@@ -1,16 +1,17 @@
 from .world_object import WorldObj
 from .constants import *
+from .componets import CraneData
 
 class Crane(WorldObj):
-    def __init__(self,  x:int=0):
+    def __init__(self,  x:int,cfg:CraneData):
+        self.cfg:CraneData=cfg
         self.timer:int=0
         self.action:Actions=Actions.stay
         self.tip=''
         super().__init__(x)
         
     def __str__(self):
-        rt=self.tip+' '+super().__str__()
-        return rt
+        return self.tip+f' {self.cfg.name}'+super().__str__()
 
     def reset(self):
         super().reset()
@@ -26,8 +27,8 @@ class Crane(WorldObj):
         if self.action==Actions.stay:
             return
         dir=DIR_TO_VEC[self.action]
-        self._x=self.x+dir[0]
-        self._y=self.y+dir[1]
+        self._x=self.x+dir[0]*self.cfg.speed_x
+        self._y=self.y+dir[1]*self.cfg.speed_y
         if reset_action:
             self.action=Actions.stay
 

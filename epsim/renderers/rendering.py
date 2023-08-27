@@ -1,28 +1,36 @@
 from __future__ import annotations
 
 import math
-
 import numpy as np
 
 
-def downsample(img, factor):
+
+def set_color(img,r,g,b):
+    img2=img.astype(np.float32)
+    img2/=255.0
+    img2[:,:]*=np.array([r/255.0,g/255.0,b/255.0],dtype=np.float32)
+    img2*=255.0
+    return img2.astype(np.uint8)
+
+def highlight_img(img, color=(255, 255, 255), alpha=0.30):
     """
-    Downsample an image along both dimensions by some factor
+    Add highlighting to an image
     """
 
-    assert img.shape[0] % factor == 0
-    assert img.shape[1] % factor == 0
+    blend_img = img + alpha * (np.array(color, dtype=np.uint8) - img)
+    blend_img = blend_img.clip(0, 255).astype(np.uint8)
+    img[:, :, :] = blend_img
 
-    img = img.reshape(
-        [img.shape[0] // factor, factor, img.shape[1] // factor, factor, 3]
-    )
-    img = img.mean(axis=3)
-    img = img.mean(axis=1)
+# def make_polygon(num_sides:int=3,w:int=64,h:int=64):
+#     assert num_sides>=3
+#     angle = 2 * np.pi / num_sides
+#     vertices=[]
+#     for i in range(num_sides):
+#         x = np.cos(i * angle)+0.5
+#         y = np.sin(i * angle)+0.5
+#         vertices.append( [int(x*w+0.5), int(y*w+0.5)])
 
-    return img
-
-
-def fill_coords(img, fn, color):
+def fill_coords(img, fn):
     """
     Fill pixels of an image with coordinates matching a filter function
     """
@@ -32,7 +40,7 @@ def fill_coords(img, fn, color):
             yf = (y + 0.5) / img.shape[0]
             xf = (x + 0.5) / img.shape[1]
             if fn(xf, yf):
-                img[y, x] = color
+                img[y, x] = (255,255,255)
 
     return img
 
@@ -87,6 +95,29 @@ def point_in_circle(cx, cy, r):
 
     return fn
 
+def point_in_polygon(cx, cy, radius, num_sides):
+    # 计算正多边形的半径
+    #radius = side_length / (2 * math.sin(math.pi / num_sides))
+    
+    # 计算正多边形的顶点坐标
+    K=2 * math.pi / num_sides
+    vertices = []
+    for i in range(num_sides):
+        angle =  i * K #+math.pi / num_sides 
+        vx = cx + radius * math.cos(angle)
+        vy = cy + radius * math.sin(angle)
+        vertices.append((vx, vy))
+    
+    # 判断点是否在正多边形内
+    def fn(x, y):
+        inside = False
+        for i in range(num_sides):
+            j = (i + 1) % num_sides
+            if (vertices[i][1] > y) != (vertices[j][1] > y) and \
+            x < (vertices[j][0] - vertices[i][0]) * (y - vertices[i][1]) / (vertices[j][1] - vertices[i][1]) + vertices[i][0]:
+                inside = not inside
+        return inside
+    return fn
 
 def point_in_rect(xmin, xmax, ymin, ymax):
     def fn(x, y):
@@ -122,12 +153,20 @@ def point_in_triangle(a, b, c):
 
     return fn
 
-
-def highlight_img(img, color=(255, 255, 255), alpha=0.30):
+'''
+def downsample(img, factor):
     """
-    Add highlighting to an image
+    Downsample an image along both dimensions by some factor
     """
 
-    blend_img = img + alpha * (np.array(color, dtype=np.uint8) - img)
-    blend_img = blend_img.clip(0, 255).astype(np.uint8)
-    img[:, :, :] = blend_img
+    assert img.shape[0] % factor == 0
+    assert img.shape[1] % factor == 0
+
+    img = img.reshape(
+        [img.shape[0] // factor, factor, img.shape[1] // factor, factor, 3]
+    )
+    img = img.mean(axis=3)
+    img = img.mean(axis=1)
+
+    return img
+'''

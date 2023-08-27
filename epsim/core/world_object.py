@@ -22,6 +22,7 @@ class WorldObj:
         if self.attached!=None:
             pos=self.attached.x
         return pos 
+    
     @property
     def y(self):
         pos=self._y
@@ -38,7 +39,7 @@ class WorldObj:
         pass
 
     def __str__(self):
-        flag='[W]' if self.carrying!=None else ' '
+        flag='[W]' if self.carrying!=None else '  '
         return f'{flag} ({self.x:.1f},{self.y:.1f})'
 
  
