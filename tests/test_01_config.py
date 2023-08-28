@@ -39,7 +39,7 @@ def test_product_proc():
 import hydra
 @hydra.main(config_path="../config", config_name="args", version_base="1.3")
 def main(cfg: "DictConfig"):  # noqa: F821
-    assert cfg.tile_size==[96,32]
+    assert cfg.tile_size==32
     assert cfg.FPS==24
     assert cfg.products[0].code=='A' and cfg.products[0].num==3
 

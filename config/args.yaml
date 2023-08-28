@@ -8,7 +8,7 @@ max_x: 32
 max_deep: 2.0
 
 FPS: 24
-tile_size: [32,96] #width.height
+tile_size: 32
 rows: 4
 cols: 32
 

@@ -12,6 +12,26 @@ def set_color(img,r,g,b):
     img2*=255.0
     return img2.astype(np.uint8)
 
+
+def blend_imgs(img_src:np.ndarray,img_dest:np.ndarray, start=(0,0)):
+    """
+    合并两张图片
+    """
+    left,top=start
+    h1,w1,_=img_src.shape
+    h2,w2,_=img_dest.shape
+
+    rt=np.zeros_like(img_dest)
+    rt[:,:,:]=img_dest
+
+    for i in range(h2):
+        for j in range(w2):
+            if i>=top and j>=left and i<h1+top and j<w1+left:
+                r,c=i-top,j-left
+                if (img_src[r, c]).any()>0:
+                    rt[i, j, :]=img_src[r, c]
+    return rt
+            
 def highlight_img(img, color=(255, 255, 255), alpha=0.30):
     """
     Add highlighting to an image
@@ -21,14 +41,6 @@ def highlight_img(img, color=(255, 255, 255), alpha=0.30):
     blend_img = blend_img.clip(0, 255).astype(np.uint8)
     img[:, :, :] = blend_img
 
-# def make_polygon(num_sides:int=3,w:int=64,h:int=64):
-#     assert num_sides>=3
-#     angle = 2 * np.pi / num_sides
-#     vertices=[]
-#     for i in range(num_sides):
-#         x = np.cos(i * angle)+0.5
-#         y = np.sin(i * angle)+0.5
-#         vertices.append( [int(x*w+0.5), int(y*w+0.5)])
 
 def fill_coords(img, fn):
     """
