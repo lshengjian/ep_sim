@@ -1,5 +1,4 @@
 from .world_object import WorldObj
-from typing import Dict
 from .constants import *
 from .componets import *
 
@@ -18,8 +17,9 @@ class Slot(WorldObj):#缓存及加工位
         super().__init__(x)
         
     def __str__(self):
+        locked='X' if self.locked else ''
         old=super().__str__()
-        return f'{self.cfg.name} {old})'
+        return f'{locked} {self.cfg.op_name} {old})'
     
     def reset(self):
         super().reset()

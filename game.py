@@ -20,11 +20,11 @@ window = pygame.display.set_mode((window_width, window_height))
 background_color = (0, 0, 0)
 window.fill(background_color)
 
-img1=get_slot_shape(1)
-
+img1=get_slot_shape(11)
+img1=set_color(img1,0,255,0)
 img2=get_workpiece_shape('A')
 img2=set_color(img2,0,255,0)
-img=blend_imgs(img2,img1,(0,0))
+img=blend_imgs(img2,img1,(0,16))
 
 
 window.blit(make_surface(img1),(10,10))

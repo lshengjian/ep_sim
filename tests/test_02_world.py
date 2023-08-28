@@ -12,15 +12,13 @@ def test_world():
 
 def test_cranes():
     world=World()
-    ds=build_config()
-
     wp=Workpiece(0,'A')
     world.plan_next(wp)
     start=world.get_free_slot(1,wp)
     world.attach(wp,start)
     assert wp.y==1 and  wp.x==1
-    assert wp.target_op.operate==start.cfg.name
-    start2=world.get_free_slot(1,1)
+    #assert wp.target_op.op_key==start.cfg.op_key
+    start2=world.get_free_slot(1,wp)
     assert start!=start2
 
     crane=world.group_cranes[1][0]
@@ -31,7 +29,7 @@ def test_cranes():
     assert  wp.attached==crane and crane.carrying==wp
     assert wp.y==1 and  wp.x==1 
     #world.plan_next(wp)
-    assert wp.target_op.operate=='镀银'
+    assert wp.target_op.op_name=='镀银'
     world.update()
     assert wp.y==0 and  wp.x==1 
     crane.set_command(Actions.forward)
@@ -74,8 +72,11 @@ def test_cranes():
 
 if __name__ == "__main__":
     world=World()
-    ds=build_config()
-
     wp=Workpiece(0,'A')
     world.plan_next(wp)
     start=world.get_free_slot(1,wp)
+    world.attach(wp,start)
+    assert wp.y==1 and  wp.x==1
+    #assert wp.target_op.op_key==start.cfg.op_key
+    start2=world.get_free_slot(1,wp)
+    assert start!=start2

@@ -11,9 +11,10 @@ from .slot import Slot
 from .workpiece import Workpiece
 from .config import build_config
 
-default_cfg_dict=build_config()
+
 class World:
-    def __init__(self,cfg_dict:Dict[str,List[Index]]=default_cfg_dict, max_offset:int=32,max_deep:float=2.0):
+    def __init__(self, max_offset:int=32,max_deep:float=2.0):
+        
         self.is_over=False
         self.reward=0
         self.max_x: int = max_offset
@@ -24,7 +25,6 @@ class World:
         self.group_cranes:Dict[int,List[Crane]]=defaultdict(list)
         self.starts=[]
         self.ends=[]
-        self.cfg_dict=cfg_dict
         self.product_procs:Dict[str,List[ProcessData]]=defaultdict(list)
         self.build()
     
@@ -44,7 +44,8 @@ class World:
         slots = self.group_slots[group]
         data=[]
         for s in slots:
-            if s.locked==False and s.cfg.name==wp.target_op.operate and s.carrying==None:
+            print(s)
+            if s.locked==False and s.cfg.op_key==wp.target_op.op_key and s.carrying==None:
                 data.append((abs(wp.x-s.x),s))
         
         data.sort(key=lambda x:x[0])
@@ -83,7 +84,7 @@ class World:
             source.carrying=None
     def on_workpiece_out_slot(self,wp:Workpiece,tank:Slot):
         # set reward: 1
-        if tank.cfg.name=='下料':
+        if tank.cfg.op_key==3:
             self.reward+=10
         else:
             self.reward+=1
@@ -151,15 +152,10 @@ class World:
         return int(x+0.5)
   
 
-    def _make_ops_dict(self,ops:List[OperateData]):
-        rt={}
-        for op in ops:
-            rt[op.key]=op
-        return rt
-    
+   
 
     def build(self):
-        ds=self.cfg_dict
+        self.ops_dict,slots,cranes,procs=build_config()
         self.all_cranes.clear()
         self.group_cranes.clear()
 
@@ -170,24 +166,24 @@ class World:
         self.ends.clear()
         self.product_procs.clear()
 
-        for rec in ds['4-procedures']:
+        for rec in procs:
             pd:ProcessData=rec
             self.product_procs[pd.product_code].append(pd)
 
         #ops=self._make_ops_dict(ds['1-operates'])
-        for rec in ds['2-slots']:
+        for rec in slots:
             s:SlotData=rec
             for x in s.offsets:
                 slot:Slot=Slot(x,s)
-                if s.name=='上料':
+                if s.op_key==1:
                     self.starts.append(slot)
-                elif s.name=='下料':
+                elif s.op_key==3:
                     self.ends.append(slot)
                 self.pos_slots[int(x)]=slot
                 for g in s.group:
                     self.group_slots[g].append(slot)
 
-        for rec in ds['3-cranes']:
+        for rec in cranes:
             cfg:CraneData=rec
             crane:Crane=Crane(cfg.offset,cfg)
             self.all_cranes.append(crane)

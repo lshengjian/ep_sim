@@ -55,8 +55,33 @@ def get_workpiece_shape(prd_code:str='A'):  # facage method
 def make_workpiece(num_side=3): 
     print('make workpiece')
     img=np.zeros((TILE_SIZE,TILE_SIZE,3),dtype=np.uint8)
-    fill_coords(img,point_in_rect(0,1,0.6,0.7))
-    fill_coords(img,point_in_polygon(0.5,0.6,0.4,num_side))
+    fill_coords(img,point_in_rect(0,1,0,0.1))
+    fill_coords(img,point_in_rect(0.48,0.52,0.1,0.6))
+    fill_coords(img,point_in_polygon(0.5,0.62,0.3,num_side))
+    return img
+
+def make_buff():
+    print('make buff')
+    img=np.zeros((TILE_SIZE*2,TILE_SIZE,3),dtype=np.uint8)
+    fill_coords(img,point_in_rect(0.1,0.2,0.36,1))
+    fill_coords(img,point_in_rect(0.8,0.9,0.36,1))
+
+    fill_coords(img,point_in_rect(0,0.3,0.26,0.38))
+    fill_coords(img,point_in_rect(0.7,1.0,0.26,0.38))
+   
+    return img
+
+def make_tank():
+    print('make tank')
+    img=make_buff()
+    fill_coords(img,point_in_rect(0,1.0,0.95,1))
+    for i in range(3):
+        ylo = 0.6 + 0.1 * i
+        yhi = 0.65 + 0.1 * i
+        fill_coords(img, point_in_line(0.1, ylo, 0.3, yhi, r=0.03))
+        fill_coords(img, point_in_line(0.3, yhi, 0.5, ylo, r=0.03))
+        fill_coords(img, point_in_line(0.5, ylo, 0.7, yhi, r=0.03))
+        fill_coords(img, point_in_line(0.7, yhi, 0.9, ylo, r=0.03))
     return img
 
     
@@ -72,13 +97,9 @@ def get_slot_shape(op_key=1):  # facage method
     21,镀铜
     22,镀银
     '''
-    print('make slot')
-    img=np.zeros((TILE_SIZE*2,TILE_SIZE,3),dtype=np.uint8)
-    fill_coords(img,point_in_rect(0.1,0.2,0.36,1))
-    fill_coords(img,point_in_rect(0.8,0.9,0.36,1))
+    if op_key<10:
+        return make_buff()
+    return make_tank()
+        
 
-    fill_coords(img,point_in_rect(0,0.3,0.26,0.38))
-    fill_coords(img,point_in_rect(0.7,1.0,0.26,0.38))
-   
-    return img
 

@@ -33,10 +33,14 @@ class OperateData(Index):
 @component
 class SlotData(Index):
     group:Tuple=tuple()
-    name:str=''
+    op_key:int=0
     offsets:Tuple=tuple()
+    
+    op_name:str=''
     def __str__(self) -> str:
-        return f'{self.group} {self.name} {self.offsets}'
+        gs='|'.join(map(str,self.group))
+        xs='|'.join(map(str,self.offsets))
+        return f'{gs} {self.op_name} {xs}'
     
 @component
 class CraneData(Index):
@@ -51,8 +55,10 @@ class CraneData(Index):
 @component
 class ProcessData(Index):
    product_code:str=''
-   operate:str=''
+   op_key:int=0
    time_min:int=0
    time_max:int=0
+   
+   op_name:str=''
    def __str__(self) -> str:
-        return f'[{self.product_code}]{self.operate} {self.time_min}->{self.time_max}'
+        return f'[{self.product_code}]{self.op_name} {self.time_min}->{self.time_max}'

@@ -55,7 +55,7 @@ def _make_slots(data):
         gs=map(int,split_field(ds[0]))
         gs=tuple(gs)
         xs=tuple(split_field(ds[2]))
-        rt.append(SlotData(id=i,group=gs,name=ds[1],offsets=xs))
+        rt.append(SlotData(id=i,group=gs,op_key=int(ds[1]),offsets=xs))
     return rt
 
 def _make_cranes(data):
@@ -68,9 +68,9 @@ def _make_cranes(data):
                             speed_y=float(ds[4]) ) )
     return rt
 
-def prodct_operates(ps:List[ProcessData],product_code:str):
-    rt=list(filter(lambda x:x.product_code==product_code,ps))
-    return rt
+# def prodct_operates(ps:List[ProcessData],product_code:str):
+#     rt=list(filter(lambda x:x.product_code==product_code,ps))
+#     return rt
 
 # def next_operate(ps:List[ProcessData],start_idx:int=0):
 #     rt=None
@@ -84,7 +84,7 @@ def _make_procedures(data):
     rt:List[ProcessData]=[]
     for i,d in enumerate(data):
         ds=d.split(',')
-        rt.append(ProcessData(id=i,product_code=ds[0],operate=ds[1], \
+        rt.append(ProcessData(id=i,product_code=ds[0],op_key=int(ds[1]), \
                             time_min=int(ds[2]), \
                             time_max=int(ds[3]) ) )
     return rt
@@ -104,13 +104,24 @@ def _make_one(fn:str):
         rt =  _make_procedures(data)
     return name,rt
 
-def build_config()->Dict[str,List[Index]]:
+def build_config()->Tuple:#->Tuple[|,Dict[str,List[Index]]
     ds:Dict[str,List[Index]]={}
     fs=get_files()
     for f in fs:
         name,data=_make_one(f)
         ds[name]=data
-    return ds  
+    ops=ds['1-operates']
+    op_dict:Dict[int,OperateData]={}
+    for d in ops:
+        op:OperateData=d
+        op_dict[op.key]=op
+    for d in ds['2-slots']:
+        slot:SlotData=d
+        slot.op_name=op_dict[slot.op_key].name
+    for d in ds['4-procedures']:
+        slot:SlotData=d
+        slot.op_name=op_dict[slot.op_key].name
+    return op_dict,ds['2-slots'],ds['3-cranes'] ,ds['4-procedures'] 
 
 
 

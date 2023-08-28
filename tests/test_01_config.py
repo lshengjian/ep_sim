@@ -4,7 +4,7 @@ dir=path.abspath(path.dirname(__file__) + './..')
 sys.path.append(dir)
 
 from epsim.utils import split_field
-from epsim.core.config import get_files,get_file_info,build_config,prodct_operates
+from epsim.core.config import get_files,get_file_info,build_config
 
 def test_split_field():
     assert split_field('1.3')==[1.3]
@@ -23,17 +23,17 @@ def test_file_info():
     assert len(data)==8
 
 def test_build():
-    cfg=build_config()
-    assert str(cfg['1-operates'][0])=='[1]上料 (5, 25, 255)'
-    assert str(cfg['2-slots'][0])=='(1,) 上料 (1, 2)'
-    assert str(cfg['3-cranes'][0])=='(1)H1 1 (1.0,1.0)'
-    assert str(cfg['4-procedures'][0])=='[A]上料 0->0'
+    ops_map,slots,cranes,procs=build_config()
+    assert ops_map[1].name=='上料'
+    assert str(slots[0])=='1 上料 1|2'
+    assert str(cranes[0])=='(1)H1 1 (1.0,1.0)'
+    assert str(procs[0])=='[A]上料 0->0'
 
-def test_product_proc():
-    cfg=build_config()
-    ps1=prodct_operates(cfg['4-procedures'],'A')
-    ps2=prodct_operates(cfg['4-procedures'],'B')
-    assert len(ps2)==len(ps1)+2
+# def test_product_proc():
+#     ops_map,slots,cranes,procs=build_config()
+#     ps1=prodct_operates(procs,'A')
+#     ps2=prodct_operates(procs,'B')
+#     assert len(ps2)==len(ps1)+2
 
 
 import hydra
