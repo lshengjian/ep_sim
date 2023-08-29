@@ -65,7 +65,7 @@ class ManualControl:
         key_to_action = {
             "left": Actions.left,
             "right": Actions.right,
-            "up": Actions.forward
+            "up": Actions.right
         }
         if key in key_to_action.keys():
             action = key_to_action[key]

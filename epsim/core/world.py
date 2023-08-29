@@ -17,6 +17,7 @@ class World:
         
         self.is_over=False
         self.reward=0
+        self.ops_dict:Dict[int,OperateData]=None
         self.max_x: int = max_offset
         self.max_y: float = max_deep
         self.all_cranes:List[Crane] = []
@@ -25,15 +26,15 @@ class World:
         self.group_cranes:Dict[int,List[Crane]]=defaultdict(list)
         self.starts=[]
         self.ends=[]
-        self.product_procs:Dict[str,List[ProcessData]]=defaultdict(list)
+        self.product_procs:Dict[str,List[OpLimitData]]=defaultdict(list)
         self.build()
     
     def plan_next(self,wp:Workpiece):
         ps=self.product_procs[wp.prouct_code]
-        if wp.target_op is None:#第一次规划，放到上料位
+        if wp.target_op_limit is None:#第一次规划，放到上料位
             wp.set_next_operate(ps[0])
             return
-        idx=ps.index(wp.target_op)
+        idx=ps.index(wp.target_op_limit)
         if idx<len(ps)-1:
             wp.set_next_operate(ps[idx+1])
 
@@ -45,7 +46,7 @@ class World:
         data=[]
         for s in slots:
             print(s)
-            if s.locked==False and s.cfg.op_key==wp.target_op.op_key and s.carrying==None:
+            if s.locked==False and s.cfg.op_key==wp.target_op_limit.op_key and s.carrying==None:
                 data.append((abs(wp.x-s.x),s))
         
         data.sort(key=lambda x:x[0])
@@ -97,15 +98,15 @@ class World:
         pos=self.round(crane.x)
         slot=self.pos_slots.get(pos,None)
         if slot!=None and math.isclose(crane.y,1):
-            wp=crane.carrying
+            wp:Workpiece=crane.carrying
             if wp==None and crane.tip=='↑':
                 self.translate(slot,crane)
                 self.on_workpiece_out_slot(crane.carrying,slot)
             elif wp!=None and crane.tip=='↓':
-                # if wp.target_type!=slot.cfg.id:
-                #     print(f'{wp.target_type} not same as {slot.type_id}')
-                #     self.is_over=True
-                #     return
+                if wp.target_op_limit.op_key!=slot.cfg.op_key:
+                    print(f'{wp.target_type} not same as {slot.type_id}')
+                    self.is_over=True
+                    return
                 self.translate(crane,slot)
         cranes=self.group_cranes[crane.cfg.group]
         for c in cranes:
@@ -119,6 +120,7 @@ class World:
         return collide
         
     def update(self):
+        self.reward=0
         for cs in self.group_cranes.values():
             for c in cs:
                 c.step()
@@ -167,7 +169,7 @@ class World:
         self.product_procs.clear()
 
         for rec in procs:
-            pd:ProcessData=rec
+            pd:OpLimitData=rec
             self.product_procs[pd.product_code].append(pd)
 
         #ops=self._make_ops_dict(ds['1-operates'])

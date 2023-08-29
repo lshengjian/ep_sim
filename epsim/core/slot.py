@@ -29,7 +29,7 @@ class Slot(WorldObj):#缓存及加工位
     def step(self):
         self.left_time=9999
         if self.carrying!=None:
-            op:ProcessData=self.carrying.target_op
+            op:OpLimitData=self.carrying.target_op
             self.timer+=1
             self.left_time=op.time_min-self.timer
 

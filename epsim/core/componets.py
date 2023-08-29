@@ -53,7 +53,7 @@ class CraneData(Index):
         return f'({self.group}){self.name} {self.offset} ({self.speed_x},{self.speed_x})'
    
 @component
-class ProcessData(Index):
+class OpLimitData(Index):
    product_code:str=''
    op_key:int=0
    time_min:int=0

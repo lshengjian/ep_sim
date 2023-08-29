@@ -1,12 +1,12 @@
-from epsim.envs.playground import PlaygroundEnv
+from epsim.envs.env import MyGrid
 
 
 
    
 if __name__ == "__main__":
-   env = PlaygroundEnv(render_mode="human")
+   env = MyGrid(render_mode="human",fps=4)
    observation, info = env.reset(seed=40)
-   for _ in range(1000):
+   for _ in range(100):
       action = env.action_space.sample()  # this is where you would insert your policy
       observation, reward, terminated, truncated, info = env.step(action)
 

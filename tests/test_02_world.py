@@ -29,10 +29,10 @@ def test_cranes():
     assert  wp.attached==crane and crane.carrying==wp
     assert wp.y==1 and  wp.x==1 
     #world.plan_next(wp)
-    assert wp.target_op.op_name=='镀银'
+    assert wp.target_op_limit.op_name=='镀银'
     world.update()
     assert wp.y==0 and  wp.x==1 
-    crane.set_command(Actions.forward)
+    crane.set_command(Actions.right)
     world.update()
     world.update()
     assert wp.y==0 and  wp.x==3

@@ -1,7 +1,7 @@
 import pygame
 import numpy as np
-from epsim.renderers.rendering import set_color,blend_imgs
-from epsim.renderers.shapes import get_slot_shape,get_crane_shape,get_workpiece_shape
+from epsim.envs.rendering import set_color,blend_imgs
+from epsim.envs.shapes import get_slot_shape,get_crane_shape,get_workpiece_shape
 # Initialize Pygame
 
 def make_surface(img):

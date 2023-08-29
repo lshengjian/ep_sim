@@ -81,10 +81,10 @@ def _make_cranes(data):
 #     return rt
 
 def _make_procedures(data):
-    rt:List[ProcessData]=[]
+    rt:List[OpLimitData]=[]
     for i,d in enumerate(data):
         ds=d.split(',')
-        rt.append(ProcessData(id=i,product_code=ds[0],op_key=int(ds[1]), \
+        rt.append(OpLimitData(id=i,product_code=ds[0],op_key=int(ds[1]), \
                             time_min=int(ds[2]), \
                             time_max=int(ds[3]) ) )
     return rt
