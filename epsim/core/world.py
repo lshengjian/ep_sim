@@ -17,6 +17,8 @@ class World:
         
         self.is_over=False
         self.reward=0
+        self.score=0
+        self.step_count=0
         self.ops_dict:Dict[int,OperateData]=None
         self.max_x: int = max_offset
         self.max_y: int = 2
@@ -27,18 +29,24 @@ class World:
         self.starts=[]
         self.ends=[]
         self.product_procs:Dict[str,List[OpLimitData]]=defaultdict(list)
+        self.products={}
+        self.prd_idx=0
         self.reset()
     
-    def action_mask_one_crane(self,crane_idx:int=0):
+    def mask_one_crane(self,crane_idx:int=0):
         crane:Crane=self.all_cranes[crane_idx]
         mask = np.ones(5, dtype=np.int8)
-        if crane.y<=0.5:
-            mask[Actions.down]=0
-        elif crane.y>=self.max_y-0.5:
-            mask[Actions.up]=0
-        if crane.x<=0.5:
+        if crane.y<1e-4:
+            mask[Actions.top]=0
+        elif crane.y>(self.max_y-1e-4):
+            mask[Actions.bottom]=0
+        if 1e-4<crane.y<(self.max_y-1e-4):
             mask[Actions.left]=0
-        elif crane.x>=self.max_x-0.5:
+            mask[Actions.right]=0
+        
+        if crane.x<1e-4:
+            mask[Actions.left]=0
+        elif crane.x>(self.max_x-1e-4):
             mask[Actions.right]=0
         return mask
     
@@ -62,7 +70,10 @@ class World:
             #print(s)
             if s.locked==False and s.cfg.op_key==wp.target_op_limit.op_key and s.carrying==None:
                 data.append((abs(wp.x-s.x),s))
+        if len(data)<1:
+            return None
         data.sort(key=lambda x:x[0])
+        data[0][1].locked=True
         return data[0][1]
     
 
@@ -72,8 +83,8 @@ class World:
         '''        
         if target.carrying is None:
             target.carrying=wp
-            if type(target) is Crane:
-                self.plan_next(wp)
+            # if type(target) is Crane:
+            #     self.plan_next(wp)
             wp.attached=target
         else:
             self.is_over=True
@@ -99,9 +110,7 @@ class World:
             source.carrying=None
     def on_workpiece_out_slot(self,wp:Workpiece,tank:Slot):
         # set reward: 1
-        if tank.cfg.op_key==3:
-            self.reward+=10
-        else:
+        if tank.cfg.op_key>9 and wp!=None:
             self.reward+=1
 
     def check_collide(self,crane:Crane)->bool:
@@ -113,7 +122,7 @@ class World:
         slot=self.pos_slots.get(pos,None)
         if slot!=None and math.isclose(crane.y,1):
             wp:Workpiece=crane.carrying
-            if wp==None and crane.tip=='↑':
+            if wp==None and crane.tip=='↑' and slot.carrying!=None:
                 self.translate(slot,crane)
                 self.on_workpiece_out_slot(crane.carrying,slot)
             elif wp!=None and crane.tip=='↓':
@@ -121,7 +130,8 @@ class World:
                     logger.info(f'{wp.target_type} not same as {slot.type_id}')
                     self.is_over=True
                     return
-                self.translate(crane,slot)
+                if crane.carrying!=None :
+                    self.translate(crane,slot)
         cranes=self.group_cranes[crane.cfg.group]
         for c in cranes:
             if c==crane:
@@ -134,33 +144,37 @@ class World:
         return collide
         
     def update(self):
+        self.step_count+=1
         if self.is_over:
             return
         self.reward=0
-        for cs in self.group_cranes.values():
-            for c in cs:
-                c.step()
+        for c in self.all_cranes:
+            c.step()
+
         slots=self.pos_slots.values()
         for s in slots:
             s.step()
-
         self.check_cranes()
         self.check_slots()
+        self.score+=self.reward
 
 
     def check_slots(self):
         slots=self.pos_slots.values()
         for s in slots:
             if s.left_time<0:
-                self.is_over=True
-                logger.info(f'{s} op timeout!')
-                break  
+                self.reward += s.left_time
+                op:OpLimitData=s.carrying.target_op_limit
+                if s.left_time<-op.duration:
+                    self.is_over=True
+                    logger.info(f'{s} op timeout!')
+                    break  
 
     def check_cranes(self):
         for c in self.all_cranes:
             if  self.out_bound(c.x,c.y):
                 self.is_over=True
-                print(c)
+                
                 return
             if self.check_collide(c):
                 self.is_over=True
@@ -172,12 +186,32 @@ class World:
     
     def round(self,x:float)->int:
         return int(x+0.5)
-  
+    def put_product(self):
+        if self.cur_prd_code is None:
+            return
+        wp=Workpiece(0,self.cur_prd_code)
+        self.plan_next(wp)
+        start=self.get_free_slot(1,wp)
+        if start is None:
+            return
+        self.products[self.cur_prd_code][1]+=1
+        self.attach(wp,start)
 
-   
+    def next_product(self):
+        codes=[]
+        for code,d in self.products.items():
+            if d[1]<d[0]:
+                codes.append(code)
+        self.prd_idx=(self.prd_idx+1)%len(codes)
+        self.cur_prd_code=None if len(codes)<1 else codes[self.prd_idx]
+        
 
     def reset(self):
         self.is_over=False
+        self.prd_idx=0
+        self.cur_prd_code=None
+        self.step_count=0
+        self.score=0
         self.ops_dict,slots,cranes,procs=build_config()
         self.all_cranes.clear()
         self.group_cranes.clear()
@@ -211,6 +245,9 @@ class World:
             crane:Crane=Crane(cfg.offset,cfg)
             self.all_cranes.append(crane)
             self.group_cranes[cfg.group].append(crane)
+        
+        for d in self.products.values():
+            d[1]=0
     
     def pprint(self):
         for k,cs in self.group_cranes.items():

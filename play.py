@@ -11,7 +11,7 @@ def main(cfg: "DictConfig"):  # noqa: F821
    for _ in range(500):
       action=policy.decision(info)
       observation, reward, terminated, truncated, info = env.step(action)
-      print(f"step={env.step_count}, reward={reward:.2f}")
+      
       if terminated or truncated:
          
          observation, info = env.reset()

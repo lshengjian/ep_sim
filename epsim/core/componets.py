@@ -56,9 +56,12 @@ class CraneData(Index):
 class OpLimitData(Index):
    product_code:str=''
    op_key:int=0
-   time_min:int=0
-   time_max:int=0
+   min_time:int=0
+   max_time:int=0
    
    op_name:str=''
+   @property
+   def duration(self):
+       return self.max_time-self.min_time
    def __str__(self) -> str:
-        return f'[{self.product_code}]{self.op_name} {self.time_min}->{self.time_max}'
+        return f'[{self.product_code}]{self.op_name} {self.min_time}->{self.max_time}'

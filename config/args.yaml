@@ -2,12 +2,11 @@ products:
 - code: A
   num: 3
 - code: B
-  num: 3
+  num: 2
 
 max_x: 32
 
 fps: 24
 tile_size: 32
-rows: 4
 cols: 17
 

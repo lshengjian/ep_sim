@@ -85,8 +85,8 @@ def _make_procedures(data):
     for i,d in enumerate(data):
         ds=d.split(',')
         rt.append(OpLimitData(id=i,product_code=ds[0],op_key=int(ds[1]), \
-                            time_min=int(ds[2]), \
-                            time_max=int(ds[3]) ) )
+                            min_time=int(ds[2]), \
+                            max_time=int(ds[3]) ) )
     return rt
 
 def _make_one(fn:str):

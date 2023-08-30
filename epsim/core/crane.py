@@ -1,13 +1,11 @@
 from .world_object import WorldObj
 from .constants import *
 from .componets import CraneData
-import numpy as np
 class Crane(WorldObj):
     def __init__(self,  x:int,cfg:CraneData):
         self.cfg:CraneData=cfg
         self.timer:int=0
         self.action:Actions=Actions.stay
-        #self.dir=Actions.stay
         self.tip=''
         super().__init__(x)
         
@@ -30,7 +28,6 @@ class Crane(WorldObj):
         dir=DIR_TO_VEC[self.action]
         self._x=self.x+dir[0]*self.cfg.speed_x
         self._y=self.y+dir[1]*self.cfg.speed_y
-        # self._x=np.clip(self._x,0,32)
         # self._y=np.clip(self._y,0,2)
         if reset_action:
             self.action=Actions.stay

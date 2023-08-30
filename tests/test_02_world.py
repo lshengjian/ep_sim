@@ -23,7 +23,7 @@ def test_cranes():
 
     crane=world.group_cranes[1][0]
     assert crane.y==2 and  crane.x==1
-    crane.set_command(Actions.up)
+    crane.set_command(Actions.bottom)
     world.update()
     assert crane.y==1 and  crane.x==1 
     assert  wp.attached==crane and crane.carrying==wp
@@ -36,7 +36,7 @@ def test_cranes():
     world.update()
     world.update()
     assert wp.y==0 and  wp.x==3
-    crane.set_command(Actions.down)
+    crane.set_command(Actions.top)
     world.update()
     world.update()
 

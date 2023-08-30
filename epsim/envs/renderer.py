@@ -1,15 +1,20 @@
-import numpy as np
+import os,numpy as np
 from gymnasium.error import DependencyNotInstalled
 from ..core.world import World
-from .shapes import get_slot_shape ,get_crane_shape
+from .shapes import get_slot_shape ,get_crane_shape,get_workpiece_shape
 from .rendering import set_color,blend_imgs
 from copy import deepcopy
-# VISITE_COLOR=(55, 55, 55)
-# AGENT_COLOR=(249, 12, 3)
-# TEXT_COLOR=(0, 0, 0)
-def make_surface(img,pg):
+RENDER_DIR=os.path.abspath(os.path.dirname(__file__) )
+
+def get_font(pygame,font_size=16,shadow=False):
+    if shadow:
+        return pygame.font.Font(RENDER_DIR+'/fonts/WHARMBY.TTF', font_size)
+    return pygame.SysFont('arial', font_size)
+
+
+def make_surface(img,pygame):
     img= np.transpose(img, axes=(1, 0, 2))
-    return pg.surfarray.make_surface(img)
+    return pygame.surfarray.make_surface(img)
 
 
 class Renderer:
@@ -43,12 +48,33 @@ class Renderer:
             r,g,b=self.world.ops_dict[s.cfg.op_key].color.rgb
             img=set_color(img,r,g,b)
             self.slot_img_cache[x]=(1,img)
-
-
+    
+    def show_text(self,pygame,msg,x,y,fsize=16,shadow=False,color=(255, 221, 85)):
+        font=get_font(pygame,fsize,shadow)
+        textSerface = font.render(msg, True,color )#,(0,0,0)
+        #pygame.image.save(text_serface, "text.png")
+        # 绘制前先获取文本的宽高
+        width, height = font.size(msg)
+        # 绘制到显示器的surface上
+        self._surface.blit(textSerface, (x, y))
+        return width, height
+    
+    def _draw_products(self,pygame):
+        x=self.window_size[0]//2
+        for code,d in self.world.products.items():
+            img=get_workpiece_shape(code)
+            if self.world.cur_prd_code==code:
+                img=set_color(img,245,216,40)
+            for i in range(d[0]-d[1]):
+                self._surface.blit(make_surface(img,pygame),(x,self.tile_size//2))
+                x+=self.tile_size
+        
     def _draw(self,pygame):
         self._check_cache()
         #xs=list(map(lambda c:int(c.x+0.5) , self.world.all_cranes))
         self._surface.fill((0,0,0))
+        self.show_text(pygame,f'R:{self.world.reward:>02.0f} S:{self.world.score:>04.0f}',10,6,36,True,(155,34,237))
+        self._draw_products(pygame)
         merges=[]
         for x,d in self.crane_img_cache.items():
             if x in self.slot_img_cache and d[0]>0:
@@ -58,8 +84,10 @@ class Renderer:
             r=x//self.ncol
             c=x%self.ncol
             if x not in merges:
-
-                self._surface.blit(make_surface(slot_img,pygame),(c*self.tile_size,self.tile_size*(1+3*r)))
+                if s.carrying!=None:
+                    wp_img=get_workpiece_shape(s.carrying.prouct_code)
+                    slot_img=blend_imgs(wp_img,slot_img,(0,self.tile_size//2))
+                self._surface.blit(make_surface(slot_img,pygame),(c*self.tile_size,self.tile_size*(3*r+3)))
             else:
                 img2=deepcopy(slot_img)
                 img2[:,:,:]=slot_img
@@ -67,7 +95,7 @@ class Renderer:
                 #img2[self.tile_size:,:,:]=slot_img
                 y,crane_img=self.crane_img_cache[x]
                 img2=blend_imgs(crane_img,img2,(0,(y-1)*self.tile_size))
-                self._surface.blit(make_surface(img2,pygame),(c*self.tile_size,self.tile_size*(1+3*r)))
+                self._surface.blit(make_surface(img2,pygame),(c*self.tile_size,self.tile_size*(3*r+3)))
             
                 
         for x,d in self.crane_img_cache.items():
@@ -76,13 +104,14 @@ class Renderer:
             c=x%self.ncol
             y,img=self.crane_img_cache[x]
             img=make_surface(img,pygame)
-            self._surface.blit(img,(c*self.tile_size,(y+3*r)*self.tile_size))
+            self._surface.blit(img,(c*self.tile_size,(y+3*r+2)*self.tile_size))
            
 
 
     def render(self, mode:str):
         try:
             import pygame
+            #from pygame import gfxdraw
             
         except ImportError as e:
             raise DependencyNotInstalled(

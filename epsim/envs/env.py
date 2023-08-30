@@ -44,13 +44,19 @@ class MyGrid(Env):
         render_mode: Optional[str] = "human",
         args: "DictConfig"  = None
     ): # noqa: F821
+        
         self.world=World(args.max_x)
-        self.step_count=0
+
+
         self.cur_crane_index=0
-        self.renderer=Renderer(self.world,args.fps)
+        rows=args.max_x/args.cols+1+2
+        self.renderer=Renderer(self.world,args.fps,rows,args.cols,args.tile_size)
         self.observation_space = spaces.Discrete(10) #todo
         self.action_space = spaces.Discrete(5) #todo
         self.render_mode = render_mode
+        
+        for p in args.products:
+            self.world.products[p.code]=[p.num,0] #total,doing
 
 
 
@@ -58,10 +64,13 @@ class MyGrid(Env):
         self.cur_crane_index=(self.cur_crane_index+1)%len(self.world.all_cranes)
         
     def step(self, a:Actions):
-        self.step_count+=1
-        self.world.all_cranes[self.cur_crane_index].set_command(a)
-        mask=self.world.action_mask_one_crane(self.cur_crane_index)
+        #print('-'*8)
+        crane=self.world.all_cranes[self.cur_crane_index]
+        #print(crane,end=' ===> ')
+        crane.set_command(a)
         self.world.update()
+        #print(crane)
+        mask=self.world.mask_one_crane(self.cur_crane_index)
 
         if self.render_mode == "human":
             self.render()
@@ -77,10 +86,11 @@ class MyGrid(Env):
         options: Optional[dict] = None,
     ):
         super().reset(seed=seed)
-        self.step_count=0
         self.cur_crane_index=0
         self.world.reset()
-        mask=self.world.action_mask_one_crane(self.cur_crane_index)
+        mask=self.world.mask_one_crane(self.cur_crane_index)
+        
+        
         if self.render_mode == "human":
             self.render()
         return 0, {"action_mask": mask}

@@ -4,26 +4,32 @@ import numpy as np
 
 from enum import IntEnum
 
+'''
 
-class Actions(IntEnum):
+top
+o-------->  x
+|
+|
+↓ y 
+bottom
+'''
+class Actions(IntEnum): #顺时针
     stay = 0
     right = 1
-    down = 2 # to top
+    top = 2 # to top
     left = 3
-    up = 4
+    bottom = 4
     
-    
+   
     
 Directions = ["o","→","↑","←","↓"]
   
 DIR_TO_VEC = [ 
     np.array((0, 0)),
     np.array((1, 0)),
-    np.array((0, -1)),# （0，0） at left top
+    np.array((0, -1)),
     np.array((-1, 0)),
     np.array((0, 1)),
-    
-    
 ]
 
 

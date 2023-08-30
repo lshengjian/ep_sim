@@ -8,12 +8,6 @@ class Slot(WorldObj):#缓存及加工位
         self.timer:int=0
         self.left_time:int=9999
         self.locked=False
-        # self.ops_dict=ops_dict
-        # self.op_key=0
-        # for key,v in ops_dict.items():
-        #     if v.name==cfg.name:
-        #        self.op_key=key
-        #        break 
         super().__init__(x)
         
     def __str__(self):
@@ -29,7 +23,7 @@ class Slot(WorldObj):#缓存及加工位
     def step(self):
         self.left_time=9999
         if self.carrying!=None:
-            op:OpLimitData=self.carrying.target_op
+            op:OpLimitData=self.carrying.target_op_limit
             self.timer+=1
-            self.left_time=op.time_min-self.timer
+            self.left_time=op.min_time-self.timer
 

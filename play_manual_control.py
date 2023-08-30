@@ -29,8 +29,7 @@ class ManualControl:
 
     def step(self, action: Actions):
         _, reward, terminated, truncated, _ = self.env.step(action)
-        print(f"step={self.env.step_count}, reward={reward:.2f}")
-
+        
         if terminated:
             print("terminated!")
             self.reset(self.seed)
@@ -42,12 +41,9 @@ class ManualControl:
 
     def reset(self, seed=None):
         self.env.reset(seed=seed)
-        #self.env.render()
 
     def key_handler(self, event):
         key: str = event.key
-        #print("pressed", key)
-
         if key == "escape":
             self.env.close()
             self.closed=True
@@ -55,12 +51,20 @@ class ManualControl:
         if key == "backspace":
             self.reset()
             return
+        if key == "tab":
+            self.env.world.next_product()
+            self.env.render()
+            return
+        if key == "space":
+            self.env.world.put_product()
+            self.env.render()
+            return
 
         key_to_action = {
             "left": Actions.left,
             "right": Actions.right,
-            "down": Actions.up , #y轴向下
-            "up": Actions.down,
+            "down": Actions.bottom , #y轴向下
+            "up": Actions.top,
         }
         if key in key_to_action.keys():
             action = key_to_action[key]
