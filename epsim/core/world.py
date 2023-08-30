@@ -120,6 +120,7 @@ class World:
         return collide
         
     def update(self):
+        if self.is_over:return
         self.reward=0
         for cs in self.group_cranes.values():
             for c in cs:

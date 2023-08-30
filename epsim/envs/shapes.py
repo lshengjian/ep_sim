@@ -33,15 +33,18 @@ def is_number(string):
 def get_crane_shape(dir:int):  
     #print('make HeadCrane')
     img=np.zeros((TILE_SIZE,TILE_SIZE,3),dtype=np.uint8)
+    if dir==0:
+        return fill_coords(img,point_in_rect(0.3,0.7,0.4,0.6))
+
     #fill_coords(img,point_in_circle(0.5,0.5,0.3))
     tri_fn = point_in_triangle(
-                (0.12, 0.19),
-                (0.87, 0.50),
-                (0.12, 0.81),
+                (0.2, 0.29),
+                (0.8, 0.50),
+                (0.2, 0.71),
             )
 
-            # Rotate the agent based on its direction
-    tri_fn = rotate_fn(tri_fn, cx=0.5, cy=0.5, theta=0.5 * math.pi*dir )
+    d=dir-1
+    tri_fn = rotate_fn(tri_fn, cx=0.5, cy=0.5, theta=0.5 * math.pi*d )
     fill_coords(img, tri_fn)
     return img
     

@@ -45,6 +45,8 @@ class MyGrid(Env):
         fps=4,
     ):
         self.world=World()
+        self.step_count=0
+        self.cur_crane_index=0
         self.renderer=Renderer(self.world,fps)
         self.observation_space = spaces.Discrete(10) #todo
         self.action_space = spaces.Discrete(5) #todo
@@ -65,16 +67,21 @@ class MyGrid(Env):
     #     elif row==nrow-1:
     #         mask[DOWN]=0
     #     return mask
-    
+    def next_crane(self):
+        self.cur_crane_index=(self.cur_crane_index+1)%len(self.world.all_cranes)
+        
     def step(self, a:Actions):
-        #s=self.world.state
-        self.world.all_cranes[0].set_command(a)
+        self.step_count+=1
+        self.world.all_cranes[self.cur_crane_index].set_command(a)
         self.world.update()
 
         if self.render_mode == "human":
             self.render()
         return (0, self.world.reward, self.world.is_over, False, {"action_mask": None})
-
+    
+    @property
+    def reward(self):
+        return self.world.reward
     def reset(
         self,
         *,
@@ -82,6 +89,7 @@ class MyGrid(Env):
         options: Optional[dict] = None,
     ):
         super().reset(seed=seed)
+        self.step_count=0
         #self.lastaction = None
         if self.render_mode == "human":
             self.render()
@@ -95,5 +103,8 @@ class MyGrid(Env):
             return
         
         return self.renderer.render(self.render_mode)
+    
+    def close(self):
+        self.renderer.close()
 
  
