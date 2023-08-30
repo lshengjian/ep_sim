@@ -1,20 +1,12 @@
-#!/usr/bin/env python3
-
 from __future__ import annotations
-
-import gymnasium as gym
-import pygame
-from gymnasium import Env
-
-from epsim.core import Actions
 from epsim.envs.env import MyGrid
-# from minigrid.wrappers import ImgObsWrapper, RGBImgPartialObsWrapper
-
-
+from epsim.core import *
+import hydra
+import pygame
 class ManualControl:
     def __init__(
         self,
-        env: Env,
+        env,
         seed=None,
     ) -> None:
         self.env = env
@@ -76,11 +68,15 @@ class ManualControl:
         else:
             self.step(Actions.stay)
 
-
-if __name__ == "__main__":
-
-    env=MyGrid(render_mode="human",fps=0)
+@hydra.main(config_path="./config", config_name="args", version_base="1.3")
+def main(args: "DictConfig"):  # noqa: F821
+    env=MyGrid("human",args)
     env.reset(seed=123)
 
     manual_control = ManualControl(env, seed=1234)
     manual_control.start()
+
+if __name__ == "__main__":
+    main()
+
+

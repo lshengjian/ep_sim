@@ -2,6 +2,6 @@ import numpy as np
 
 __author__="alex"
 
-
-from .mask_policy import *
+from .random_select import *
+from .mask_select import *
 

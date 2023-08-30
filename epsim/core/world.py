@@ -1,7 +1,7 @@
 from __future__ import annotations
-
+import logging
 import math
-from typing import Any, List,Dict
+from typing import  List,Dict
 from collections import defaultdict
 from .constants import *
 from .componets import *
@@ -10,16 +10,16 @@ from .crane import Crane
 from .slot import Slot
 from .workpiece import Workpiece
 from .config import build_config
-
+logger = logging.getLogger(__name__)
 
 class World:
-    def __init__(self, max_offset:int=32,max_deep:float=2.0):
+    def __init__(self, max_offset:int=32):
         
         self.is_over=False
         self.reward=0
         self.ops_dict:Dict[int,OperateData]=None
         self.max_x: int = max_offset
-        self.max_y: float = max_deep
+        self.max_y: int = 2
         self.all_cranes:List[Crane] = []
         self.pos_slots:Dict[int,Slot] = {} #Start,End,Belt,Tank
         self.group_slots:Dict[int,List[Slot]]=defaultdict(list)
@@ -27,8 +27,22 @@ class World:
         self.starts=[]
         self.ends=[]
         self.product_procs:Dict[str,List[OpLimitData]]=defaultdict(list)
-        self.build()
+        self.reset()
     
+    def action_mask_one_crane(self,crane_idx:int=0):
+        crane:Crane=self.all_cranes[crane_idx]
+        mask = np.ones(5, dtype=np.int8)
+        if crane.y<=0.5:
+            mask[Actions.down]=0
+        elif crane.y>=self.max_y-0.5:
+            mask[Actions.up]=0
+        if crane.x<=0.5:
+            mask[Actions.left]=0
+        elif crane.x>=self.max_x-0.5:
+            mask[Actions.right]=0
+        return mask
+    
+
     def plan_next(self,wp:Workpiece):
         ps=self.product_procs[wp.prouct_code]
         if wp.target_op_limit is None:#第一次规划，放到上料位
@@ -45,10 +59,9 @@ class World:
         slots = self.group_slots[group]
         data=[]
         for s in slots:
-            print(s)
+            #print(s)
             if s.locked==False and s.cfg.op_key==wp.target_op_limit.op_key and s.carrying==None:
                 data.append((abs(wp.x-s.x),s))
-        
         data.sort(key=lambda x:x[0])
         return data[0][1]
     
@@ -64,7 +77,8 @@ class World:
             wp.attached=target
         else:
             self.is_over=True
-            print(f'{target} already have something')
+            logger.info(f'{target} already have something')
+
     
 
     def translate(self,source:Crane|Slot,target:Crane|Slot):
@@ -76,7 +90,7 @@ class World:
         #     self.is_over=True
         #     return
         if target.carrying!=None:
-            print(f'{target} already have {target.carrying}')
+            logger.info(f'{target} already have {target.carrying}')
             self.is_over=True
             return
 
@@ -104,7 +118,7 @@ class World:
                 self.on_workpiece_out_slot(crane.carrying,slot)
             elif wp!=None and crane.tip=='↓':
                 if wp.target_op_limit.op_key!=slot.cfg.op_key:
-                    print(f'{wp.target_type} not same as {slot.type_id}')
+                    logger.info(f'{wp.target_type} not same as {slot.type_id}')
                     self.is_over=True
                     return
                 self.translate(crane,slot)
@@ -114,13 +128,14 @@ class World:
                 continue
             if abs(c.x-crane.x)<2:
                 collide=True
-                print(f'{c} too close to {crane}')
+                logger.info(f'{c} too close to {crane}')
                 break
 
         return collide
         
     def update(self):
-        if self.is_over:return
+        if self.is_over:
+            return
         self.reward=0
         for cs in self.group_cranes.values():
             for c in cs:
@@ -138,18 +153,22 @@ class World:
         for s in slots:
             if s.left_time<0:
                 self.is_over=True
-                print(f'{s} op timeout!')
+                logger.info(f'{s} op timeout!')
                 break  
 
     def check_cranes(self):
         for c in self.all_cranes:
+            if  self.out_bound(c.x,c.y):
+                self.is_over=True
+                print(c)
+                return
             if self.check_collide(c):
                 self.is_over=True
-                print(f'{c} collided!')
-                break
+                #logger.error(f'{c} collided!')
+                return
                 
-    def is_in_bound(self,x:float,y:float):
-        return x>=0 and x<=self.max_x and y>=0 and y<=self.max_y
+    def out_bound(self,x:float,y:float):
+        return x<0 or y<0 or x>self.max_x or y>self.max_y
     
     def round(self,x:float)->int:
         return int(x+0.5)
@@ -157,7 +176,8 @@ class World:
 
    
 
-    def build(self):
+    def reset(self):
+        self.is_over=False
         self.ops_dict,slots,cranes,procs=build_config()
         self.all_cranes.clear()
         self.group_cranes.clear()
@@ -197,9 +217,7 @@ class World:
             print(f'Group {k}')
             for c in cs:
                 print(f'{c}')
-
         print(f'='*18)
-
         for k,cs in self.group_slots.items():
             print(f'Group {k}')
             for c in cs:

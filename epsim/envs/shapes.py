@@ -44,7 +44,7 @@ def get_crane_shape(dir:int):
             )
 
     d=dir-1
-    tri_fn = rotate_fn(tri_fn, cx=0.5, cy=0.5, theta=0.5 * math.pi*d )
+    tri_fn = rotate_fn(tri_fn, cx=0.5, cy=0.5, theta=-0.5 * math.pi*d )
     fill_coords(img, tri_fn)
     return img
     

@@ -42,42 +42,30 @@ class MyGrid(Env):
     def __init__(
         self,
         render_mode: Optional[str] = "human",
-        fps=4,
-    ):
-        self.world=World()
+        args: "DictConfig"  = None
+    ): # noqa: F821
+        self.world=World(args.max_x)
         self.step_count=0
         self.cur_crane_index=0
-        self.renderer=Renderer(self.world,fps)
+        self.renderer=Renderer(self.world,args.fps)
         self.observation_space = spaces.Discrete(10) #todo
         self.action_space = spaces.Discrete(5) #todo
         self.render_mode = render_mode
 
 
-    # def action_mask(self, state: int):
-    #     mask = np.ones(self.world.nA, dtype=np.int8)
-    #     nrow=self.world.nrow
-    #     ncol=self.world.ncol
-    #     row,col=self.world.state2idx(state)
-    #     if col==0:
-    #         mask[LEFT]=0
-    #     elif col==ncol-1:
-    #         mask[RIGHT]=0
-    #     if row==0:
-    #         mask[UP]=0
-    #     elif row==nrow-1:
-    #         mask[DOWN]=0
-    #     return mask
+
     def next_crane(self):
         self.cur_crane_index=(self.cur_crane_index+1)%len(self.world.all_cranes)
         
     def step(self, a:Actions):
         self.step_count+=1
         self.world.all_cranes[self.cur_crane_index].set_command(a)
+        mask=self.world.action_mask_one_crane(self.cur_crane_index)
         self.world.update()
 
         if self.render_mode == "human":
             self.render()
-        return (0, self.world.reward, self.world.is_over, False, {"action_mask": None})
+        return (0, self.world.reward, self.world.is_over, False, {"action_mask": mask})
     
     @property
     def reward(self):
@@ -90,10 +78,12 @@ class MyGrid(Env):
     ):
         super().reset(seed=seed)
         self.step_count=0
-        #self.lastaction = None
+        self.cur_crane_index=0
+        self.world.reset()
+        mask=self.world.action_mask_one_crane(self.cur_crane_index)
         if self.render_mode == "human":
             self.render()
-        return 0, {"action_mask": None}
+        return 0, {"action_mask": mask}
 
     def render(self):
         if self.render_mode is None:

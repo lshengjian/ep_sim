@@ -30,29 +30,12 @@ class Crane(WorldObj):
         dir=DIR_TO_VEC[self.action]
         self._x=self.x+dir[0]*self.cfg.speed_x
         self._y=self.y+dir[1]*self.cfg.speed_y
-        self._x=np.clip(self._x,0,32)
-        self._y=np.clip(self._y,0,2)
+        # self._x=np.clip(self._x,0,32)
+        # self._y=np.clip(self._y,0,2)
         if reset_action:
             self.action=Actions.stay
 
-        '''
-        x2:float=self.x+dir[0]
-        y2:float=self.y+dir[1]
         
-        if not world.on_bound(x2,y2):
-            UserWarning(f'({x2},{y2} is out bound!')
-            if reset_action:
-                self.action=Actions.stay
-            return False
-
-        self._x=x2
-        self._y=y2
-        rt= world.collide_check(self)
-        if reset_action:
-            self.action=Actions.stay
-        return rt
-        
-        '''
 
          
       
