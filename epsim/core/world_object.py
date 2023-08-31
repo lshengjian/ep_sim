@@ -1,6 +1,6 @@
 from __future__ import annotations
 from .constants import *
-from .componets import OperateData
+#from .componets import OperateData
 class WorldObj:
     """
     Base class for grid world objects
@@ -35,9 +35,12 @@ class WorldObj:
         self._y=1
 
     
-    def step(self):
+    @property
+    def image(self):
         pass
 
+    def step(self):
+        pass
     def __str__(self):
         flag='[W]' if self.carrying!=None else '  '
         return f'{flag} ({self.x:.1f},{self.y:.1f})'

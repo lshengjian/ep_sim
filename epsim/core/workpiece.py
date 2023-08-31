@@ -3,6 +3,7 @@ from .world_object import WorldObj
 from .constants import *
 #from typing import List
 from .componets import OpLimitData
+from .shapes import get_workpiece_shape
 # from .config import next_operate
 # from .slot import Slot
 class Workpiece(WorldObj):
@@ -20,5 +21,7 @@ class Workpiece(WorldObj):
     def set_next_operate(self,pd:OpLimitData=None):
         self.target_op_limit=pd
 
-        
+    @property
+    def image(self):
+        get_workpiece_shape(self.prouct_code)        
         
