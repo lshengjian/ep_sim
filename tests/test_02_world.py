@@ -7,7 +7,7 @@ from epsim.core import build_config,World,Workpiece,Actions
 
 def test_world():
     wd=World()
-    assert len(wd.group_cranes)==2
+    assert len(wd.group_cranes)==1
     assert wd.group_slots[1][-1]==wd.group_slots[2][0] # swap
 
 def test_cranes():

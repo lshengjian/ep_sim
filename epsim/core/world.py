@@ -13,8 +13,8 @@ from .config import build_config
 logger = logging.getLogger(__name__)
 
 class World:
-    def __init__(self, max_offset:int=32):
-        
+    def __init__(self,config_directory='demo', max_offset:int=32):
+        self.config_directory=config_directory
         self.is_over=False
         self.reward=0
         self.score=0
@@ -54,11 +54,11 @@ class World:
     def plan_next(self,wp:Workpiece):
         ps=self.product_procs[wp.prouct_code]
         if wp.target_op_limit is None:#第一次规划，放到上料位
-            wp.set_next_operate(ps[0])
+            wp.set_next_operate(ps[0],self.ops_dict)
             return
         idx=ps.index(wp.target_op_limit)
         if idx<len(ps)-1:
-            wp.set_next_operate(ps[idx+1])
+            wp.set_next_operate(ps[idx+1],self.ops_dict)
 
     def get_free_slot(self,group:int,wp:Workpiece)->Slot:
         '''
@@ -83,9 +83,10 @@ class World:
         '''        
         if target.carrying is None:
             target.carrying=wp
-            # if type(target) is Crane:
-            #     self.plan_next(wp)
+            if type(target) is Crane:
+                self.plan_next(wp)
             wp.attached=target
+
         else:
             self.is_over=True
             logger.info(f'{target} already have something')
@@ -96,22 +97,28 @@ class World:
         '''
         在天车和工作槽位间转移物料
         '''  
-        # if type(target) is Workpiece :
-        #     print(f'{target} is workpiece!')
-        #     self.is_over=True
-        #     return
         if target.carrying!=None:
             logger.info(f'{target} already have {target.carrying}')
             self.is_over=True
             return
 
-        if source.carrying!=None :
-            self.attach(source.carrying, target)
-            source.carrying=None
+        self.attach(source.carrying, target)
+        source.carrying=None
+
+    def on_workpiece_in_slot(self,wp:Workpiece,slot:Slot):
+        # set reward: 1
+        slot.timer=0
+        if slot.cfg.op_key==3:
+            self.reward+=10
+            del wp
+            slot.carrying=None
+            #self.products[wp.prouct_code]
+
     def on_workpiece_out_slot(self,wp:Workpiece,tank:Slot):
         # set reward: 1
-        if tank.cfg.op_key>9 and wp!=None:
-            self.reward+=1
+        tank.timer=0
+        if tank.cfg.op_key>9 :
+            self.reward+=1 if abs(tank.left_time)<3 else -1
 
     def check_collide(self,crane:Crane)->bool:
         '''
@@ -120,18 +127,21 @@ class World:
         collide=False
         pos=self.round(crane.x)
         slot=self.pos_slots.get(pos,None)
-        if slot!=None and math.isclose(crane.y,1):
+        if slot!=None and abs(crane.y-1)<0.1:
             wp:Workpiece=crane.carrying
             if wp==None and crane.tip=='↑' and slot.carrying!=None:
                 self.translate(slot,crane)
                 self.on_workpiece_out_slot(crane.carrying,slot)
-            elif wp!=None and crane.tip=='↓':
+            if wp!=None and crane.tip=='↓'  :
+                
                 if wp.target_op_limit.op_key!=slot.cfg.op_key:
-                    logger.info(f'{wp.target_type} not same as {slot.type_id}')
+                    logger.info(f'{wp.target_op_limit.op_key} not same as {slot.cfg.op_key}')
                     self.is_over=True
                     return
-                if crane.carrying!=None :
-                    self.translate(crane,slot)
+                self.translate(crane,slot)
+                self.on_workpiece_in_slot(slot.carrying,slot)
+                
+                    
         cranes=self.group_cranes[crane.cfg.group]
         for c in cranes:
             if c==crane:
@@ -162,10 +172,12 @@ class World:
     def check_slots(self):
         slots=self.pos_slots.values()
         for s in slots:
+            if s.cfg.op_key<10 or s.carrying is None:
+                continue
             if s.left_time<0:
-                self.reward += s.left_time
+                self.reward += -1
                 op:OpLimitData=s.carrying.target_op_limit
-                if s.left_time<-op.duration:
+                if  s.left_time<-5:
                     self.is_over=True
                     logger.info(f'{s} op timeout!')
                     break  
@@ -208,11 +220,11 @@ class World:
 
     def reset(self):
         self.is_over=False
-        self.prd_idx=0
-        self.cur_prd_code=None
+        self.prd_idx=-1
+        
         self.step_count=0
         self.score=0
-        self.ops_dict,slots,cranes,procs=build_config()
+        self.ops_dict,slots,cranes,procs=build_config(self.config_directory)
         self.all_cranes.clear()
         self.group_cranes.clear()
 
@@ -223,6 +235,8 @@ class World:
         self.ends.clear()
         self.product_procs.clear()
 
+        self.cur_prd_code=None
+
         for rec in procs:
             pd:OpLimitData=rec
             self.product_procs[pd.product_code].append(pd)
@@ -232,6 +246,7 @@ class World:
             s:SlotData=rec
             for x in s.offsets:
                 slot:Slot=Slot(x,s)
+                slot.color=self.ops_dict[slot.cfg.op_key].color
                 if s.op_key==1:
                     self.starts.append(slot)
                 elif s.op_key==3:

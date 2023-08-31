@@ -4,7 +4,6 @@ import math
 import numpy as np
 
 
-
 def set_color(img,r,g,b):
     img2=img.astype(np.float32)
     img2/=255.0
@@ -18,6 +17,8 @@ def blend_imgs(img_src:np.ndarray,img_dest:np.ndarray, start=(0,0)):
     合并两张图片
     """
     left,top=start
+    left=int(left)
+    top=int(top)
     h1,w1,_=img_src.shape
     h2,w2,_=img_dest.shape
 
@@ -28,6 +29,7 @@ def blend_imgs(img_src:np.ndarray,img_dest:np.ndarray, start=(0,0)):
         for j in range(w2):
             if i>=top and j>=left and i<h1+top and j<w1+left:
                 r,c=i-top,j-left
+                #print(img_src.shape)
                 if (img_src[r, c]).any()>0:
                     rt[i, j, :]=img_src[r, c]
     return rt

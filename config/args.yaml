@@ -1,3 +1,4 @@
+config_directory: demo
 products:
 - code: A
   num: 3

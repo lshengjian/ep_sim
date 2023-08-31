@@ -1,4 +1,4 @@
-from epsim.envs.env import MyGrid
+from epsim.env.env import MyGrid
 from epsim.polices import RandomSelect,MaskSelect
 
 import hydra

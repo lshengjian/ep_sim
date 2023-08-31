@@ -1,5 +1,5 @@
 from __future__ import annotations
-from epsim.envs.env import MyGrid
+from epsim.env.env import MyGrid
 from epsim.core import *
 import hydra
 import pygame
@@ -12,6 +12,7 @@ class ManualControl:
         self.env = env
         self.seed = seed
         self.closed = False
+        self.info={'action_mask':[1]*5}
 
     def start(self):
         """Start the window display with blocking event loop"""
@@ -28,7 +29,7 @@ class ManualControl:
                     self.key_handler(event)
 
     def step(self, action: Actions):
-        _, reward, terminated, truncated, _ = self.env.step(action)
+        _, reward, terminated, truncated,self.info = self.env.step(action)
         
         if terminated:
             print("terminated!")
@@ -55,6 +56,10 @@ class ManualControl:
             self.env.world.next_product()
             self.env.render()
             return
+        if key == "z":
+            self.env.next_crane()
+            self.env.render()
+            return
         if key == "space":
             self.env.world.put_product()
             self.env.render()
@@ -68,7 +73,8 @@ class ManualControl:
         }
         if key in key_to_action.keys():
             action = key_to_action[key]
-            self.step(action)
+            if self.info['action_mask'][action]:
+                self.step(action)
         else:
             self.step(Actions.stay)
 

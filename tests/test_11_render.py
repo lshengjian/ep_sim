@@ -4,7 +4,7 @@ import numpy as np
 from PIL import Image
 dir=path.abspath(path.dirname(__file__) + './..')
 sys.path.append(dir)
-from epsim.renderers.rendering import point_in_circle,fill_coords,set_color,point_in_polygon
+from epsim.core.rendering import point_in_circle,fill_coords,set_color,point_in_polygon
 
 
 def test_image():

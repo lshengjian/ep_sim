@@ -1,12 +1,14 @@
 from __future__ import annotations
 from .constants import *
-#from .componets import OperateData
+from .componets import Color
 class WorldObj:
+    TILE_SIZE:32
     """
     Base class for grid world objects
     """
     def __init__(self,x:int=0):
         self.init_x: float = x
+        self.color=Color(255,255,255)
 
         self.carrying=None #for HandCrane
         self.attached=None #for workpiece

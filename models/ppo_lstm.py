@@ -4,7 +4,7 @@ import torch.nn as nn
 import torch.nn.functional as F
 import torch.optim as optim
 from torch.distributions import Categorical
-from epsim.envs.eplate.eplate import MyEnv
+from epsim.env.eplate.eplate import MyEnv
 from epsim.utils import load_config
 from epsim.core.consts import *
 from epsim.utils import img2cnn

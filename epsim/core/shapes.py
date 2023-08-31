@@ -1,13 +1,11 @@
 #from ..core.componets import OperateData
+from .world_object import WorldObj
 from .rendering import *
 from  functools  import lru_cache
 import re
 
 
-TILE_SIZE=32
 CHS=3
-def update_tile_size(size=32):
-    TILE_SIZE=size
 
 def is_uper(string):
     pattern = r'^[0-9]+$'  # 正则表达式模式，表示只包含数字的字符串
@@ -32,7 +30,7 @@ def is_number(string):
 @lru_cache(4)
 def get_crane_shape(dir:int):  
     #print('make HeadCrane')
-    img=np.zeros((TILE_SIZE,TILE_SIZE,3),dtype=np.uint8)
+    img=np.zeros((WorldObj.TILE_SIZE,WorldObj.TILE_SIZE,3),dtype=np.uint8)
     if dir==0:
         return fill_coords(img,point_in_rect(0.3,0.7,0.4,0.6))
 
@@ -57,7 +55,7 @@ def get_workpiece_shape(prd_code:str='A'):  # facage method
     return make_workpiece(ord(prd_code[0])-61)
 def make_workpiece(num_side=3): 
     #print('make workpiece')
-    img=np.zeros((TILE_SIZE,TILE_SIZE,CHS),dtype=np.uint8)
+    img=np.zeros((WorldObj.TILE_SIZE,WorldObj.TILE_SIZE,CHS),dtype=np.uint8)
     fill_coords(img,point_in_rect(0,1,0,0.1))
     fill_coords(img,point_in_rect(0.48,0.52,0.1,0.6))
     fill_coords(img,point_in_polygon(0.5,0.62,0.3,num_side))
@@ -65,7 +63,7 @@ def make_workpiece(num_side=3):
 
 def make_buff():
     #print('make buff')
-    img=np.zeros((TILE_SIZE*2,TILE_SIZE,CHS),dtype=np.uint8)
+    img=np.zeros((WorldObj.TILE_SIZE*2,WorldObj.TILE_SIZE,CHS),dtype=np.uint8)
     fill_coords(img,point_in_rect(0.1,0.2,0.36,1))
     fill_coords(img,point_in_rect(0.8,0.9,0.36,1))
 

@@ -1,6 +1,10 @@
 from .world_object import WorldObj
 from .constants import *
+from .shapes import get_crane_shape
+from .rendering import set_color,blend_imgs
 from .componets import CraneData
+from .workpiece import Workpiece
+
 class Crane(WorldObj):
     def __init__(self,  x:int,cfg:CraneData):
         self.cfg:CraneData=cfg
@@ -22,17 +26,26 @@ class Crane(WorldObj):
         self.action=act
         self.tip=Directions[self.action]
 
-    def step(self,reset_action=False):
+    def step(self):
         if self.action==Actions.stay:
             return
         dir=DIR_TO_VEC[self.action]
         self._x=self.x+dir[0]*self.cfg.speed_x
         self._y=self.y+dir[1]*self.cfg.speed_y
         # self._y=np.clip(self._y,0,2)
-        if reset_action:
-            self.action=Actions.stay
+        self.action=Actions.stay
 
         
+    @property
+    def image(self):
+        img=get_crane_shape(self.action)
+        r,g,b=self.color.rgb
+        img=set_color(img,r,g,b)
+        if self.carrying!=None:
+            wp:Workpiece=self.carrying
+            img_wp=wp.image
+            img=blend_imgs(img_wp,img,(0,0))
 
+        return img   
          
       

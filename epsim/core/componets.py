@@ -1,6 +1,6 @@
 from __future__ import annotations
 from dataclasses import dataclass as component
-from typing import List,Tuple
+from typing import Tuple
 @component
 class Index:
     id:int =0

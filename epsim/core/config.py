@@ -2,12 +2,11 @@ from __future__ import annotations
 from pathlib import Path
 
 from typing import List,Dict
-from epsim.utils import split_field
 from epsim.core.componets import *
-#import pandas as pd
-__all__=['build_data','next_operate','prodct_operates']
+
+__all__=['split_field','build_config','get_files','get_file_info']
 import logging
-logging.basicConfig(filename='epsim.log',format='%(name)s - %(levelname)s - %(message)s', encoding='utf-8', level=logging.DEBUG)
+logging.basicConfig(filename='epsim.log',format='%(name)s - %(levelname)s - %(message)s', encoding='utf-8', level=logging.INFO)
 #,format='%(asctime)s - %(levelname)s - %(message)s', encoding='utf-8', level=logging.DEBUG)
 logger = logging.getLogger(__name__)
 '''
@@ -18,10 +17,20 @@ handler.setFormatter(colorlog.ColoredFormatter(
 logger = colorlog.getLogger(__name__)
 logger.addHandler(handler)
 '''
+def split_field(data:str):
+    sep=r'~'
+    if data.find(sep)>0:
+        ds=data.split(sep)
+        return list(range( int(ds[0]),int(ds[-1])+1 ))
+    sep=r'|'
+    if data.find(sep)>0:
+        ds=data.split(sep)
+        return list(map(int,ds))
+    return [int(float(data)+0.5)]
 
-def get_files()->List[str]:
+def get_files(config_directory:str)->List[str]:
     fs:List[str]=[]
-    dir=Path(__file__).parent.joinpath('../../config')
+    dir=Path(__file__).parent.joinpath(f'../../config/{config_directory}')
     for file in dir.rglob('*.csv'): #[x for x in p.iterdir() if x.is_dir()]
         fs.append(str(file))
         # data = pd.read_csv(file)
@@ -72,13 +81,6 @@ def _make_cranes(data):
 #     rt=list(filter(lambda x:x.product_code==product_code,ps))
 #     return rt
 
-# def next_operate(ps:List[ProcessData],start_idx:int=0):
-#     rt=None
-#     for op in ps:
-#         if op.id>start_idx:
-#             rt=op
-#             break
-#     return rt
 
 def _make_procedures(data):
     rt:List[OpLimitData]=[]
@@ -104,9 +106,9 @@ def _make_one(fn:str):
         rt =  _make_procedures(data)
     return name,rt
 
-def build_config()->Tuple:#->Tuple[|,Dict[str,List[Index]]
+def build_config(config_directory:str)->Tuple:#->Tuple[|,Dict[str,List[Index]]
     ds:Dict[str,List[Index]]={}
-    fs=get_files()
+    fs=get_files(config_directory)
     for f in fs:
         name,data=_make_one(f)
         ds[name]=data
