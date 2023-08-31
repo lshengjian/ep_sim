@@ -28,7 +28,7 @@ def split_field(data:str):
         return list(map(int,ds))
     return [int(float(data)+0.5)]
 
-def get_files(config_directory:str)->List[str]:
+def get_files(config_directory:str='demo')->List[str]:
     fs:List[str]=[]
     dir=Path(__file__).parent.joinpath(f'../../config/{config_directory}')
     for file in dir.rglob('*.csv'): #[x for x in p.iterdir() if x.is_dir()]
@@ -61,10 +61,8 @@ def _make_slots(data):
     rt:List[SlotData]=[]
     for i,d in enumerate(data):
         ds=d.split(',')
-        gs=map(int,split_field(ds[0]))
-        gs=tuple(gs)
         xs=tuple(split_field(ds[2]))
-        rt.append(SlotData(id=i,group=gs,op_key=int(ds[1]),offsets=xs))
+        rt.append(SlotData(id=i,group=int(ds[0]),op_key=int(ds[1]),offsets=xs))
     return rt
 
 def _make_cranes(data):
@@ -106,7 +104,7 @@ def _make_one(fn:str):
         rt =  _make_procedures(data)
     return name,rt
 
-def build_config(config_directory:str)->Tuple:#->Tuple[|,Dict[str,List[Index]]
+def build_config(config_directory:str='demo')->Tuple:#->Tuple[|,Dict[str,List[Index]]
     ds:Dict[str,List[Index]]={}
     fs=get_files(config_directory)
     for f in fs:
@@ -128,7 +126,7 @@ def build_config(config_directory:str)->Tuple:#->Tuple[|,Dict[str,List[Index]]
 
 
 if __name__ == '__main__':
-    assert split_field('1.3')==[1.3]
+    assert split_field('1.3')==[1]
     assert split_field('1|3|5')==[1,3,5]
     assert split_field('1~5')==[1,2,3,4,5]
 

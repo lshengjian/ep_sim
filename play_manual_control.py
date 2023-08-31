@@ -37,8 +37,7 @@ class ManualControl:
         elif truncated:
             print("truncated!")
             self.reset(self.seed)
-        else:
-            self.env.render()
+
 
     def reset(self, seed=None):
         self.env.reset(seed=seed)

@@ -11,18 +11,16 @@ def test_split_field():
     assert split_field('1~5')==[1,2,3,4,5]
 
 def test_list_files():
-    fs=get_files()
+    fs=get_files('demo')
     assert len(fs)==4
 
-def test_file_info():
-    fs=get_files()
     name,field_names,data=get_file_info(fs[0])
     assert name=='1-operates'
     assert field_names==['key', 'name', 'color']
     assert len(data)==8
 
 def test_build():
-    ops_map,slots,cranes,procs=build_config()
+    ops_map,slots,cranes,procs=build_config('demo')
     assert ops_map[1].name=='上料'
     assert str(slots[0])=='1 上料 1|2'
     assert str(cranes[0])=='(1)H1 1 (1.0,1.0)'

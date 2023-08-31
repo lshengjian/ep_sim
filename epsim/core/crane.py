@@ -35,7 +35,18 @@ class Crane(WorldObj):
         # self._y=np.clip(self._y,0,2)
         self.action=Actions.stay
 
-        
+    def put_in(self,wp:Workpiece):
+        if wp is None:
+            return
+        wp.attached=self
+        self.carrying=wp
+
+    
+    def take_out(self)->tuple:
+        rt=self.carrying
+        self.carrying=None
+        return rt,0     
+      
     @property
     def image(self):
         img=get_crane_shape(self.action)
