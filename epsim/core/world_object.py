@@ -35,6 +35,9 @@ class WorldObj:
     def reset(self):
         self._x=self.init_x
         self._y=1
+        self.carrying=None
+        self.attached=None
+
 
     
     @property

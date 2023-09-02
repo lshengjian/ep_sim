@@ -6,16 +6,32 @@ from collections import defaultdict
 from .constants import *
 from .componets import *
 from .world_object import  *
+from .constants import Actions
 from .crane import Crane
 from .slot import Slot
 from .workpiece import Workpiece
 from .config import build_config
 logger = logging.getLogger(__name__)
 '''
+外部接口
+1) 加入一批物料
+add_jobs(codes:List[str]) #add_jobs(['A','A','B'])
+2) 选择下一个天车为当前控制对象
+next_crane()
+3) 给当前天车发作业指令
+set_command(action:int]) #set_command(0)
+4) 给所有天车发作业指令
+set_commands(actions:List[int]) #set_command([0,1])
+5) 更新系统
+update()
+6) 获取当前天车的状态
+get_observation()
+7) 获取全部天车的状态
+get_observations()
+
 自动版规则：
-1) A类的全部工件加工完后上B的,其余类推
-2) 当上料槽位有空时,顺序把待加工物料放到槽位上
-3) 当物料放入下料槽位后,物料加工结束,从系统内消失。
+1) 当上料槽位有空时,顺序把待加工物料放到槽位上
+2) 当物料放入下料槽位后,物料加工结束,从系统内消失。
 
 加分规则：
 1) 在加工槽位出槽时加工的时间在正常加工时段,加1分
@@ -30,7 +46,7 @@ logger = logging.getLogger(__name__)
 class World:
     def __init__(self,config_directory='demo', max_offset:int=32,isAutoPut=True):
         self.config_directory=config_directory
-        self.isAutoPut=isAutoPut
+        self.enableAutoPut=isAutoPut
         self.is_over=False
         self.reward=0
         self.score=0
@@ -48,32 +64,80 @@ class World:
         self.product_procs:Dict[str,List[OpLimitData]]=defaultdict(list)
         self.products=[]
         self.prd_idx=0
+        self.cur_crane_index=0
         self.load_config()
-        #self.reset()
     
-    def reset(self,ps:List[str]):
-        self.products=ps
-        self.load_config()
+    @property
+    def  cur_crane(self):
+        return self.all_cranes[self.cur_crane_index]
+
+    def add_jobs(self,ps:List[str]=[]):
+        self.products.extend(ps)
+        if self.enableAutoPut:self.products2starts()
+
+    def next_crane(self):
+        self.cur_crane_index=(self.cur_crane_index+1)%len(self.all_cranes)
+
+    def set_command(self,action:Actions):
+        crane=self.all_cranes[self.cur_crane_index]
+        crane.set_command(action)
+
+    def set_commands(self,actions:List[Actions]):
+        assert len(actions)==len(self.all_cranes)
+        for i,crane in enumerate(self.all_cranes):
+            crane.set_command(actions[i])
+    
+    def update(self):
+        if self.is_over:
+            return
+        self.step_count+=1
+        self.reward=0
+        for c in self.all_cranes:
+            c.step()
+
+        slots=self.pos_slots.values()
+        for s in slots:
+            s.step()
+        self._check_cranes()
+        self._check_slots()
+        self.score+=self.reward
+    
+    def get_observation(self):# todo
+        crane=self.all_cranes[self.cur_crane_index]
+        return np.zeros((WorldObj.TILE_SIZE*3,WorldObj.TILE_SIZE*7))
+    
+    def get_observations(self):
+        return np.zeros((len(self.all_cranes),WorldObj.TILE_SIZE*3,WorldObj.TILE_SIZE*7))
+
+    def reset(self):
+        #self.load_config()
         self.is_over=False
-        self.prd_idx=-1
+        self.cur_crane_index=0
+        self.prd_idx=0
         self.cur_prd_code=None
         self.step_count=0
         self.score=0
-        self.products2starts()
+        self.products.clear()
+        for crane in self.all_cranes:
+            crane.reset()
+        for slot in  self.pos_slots.values():
+            slot.reset()
+        
         
     def get_group_bound(self,group=1):
         return self.group_limits[group]
     
     def products2starts(self):
-        ps=self.products
-        if self.isAutoPut:
-            for s in self.starts:
-                if not s.locked:
-                    if len(ps)>0:
-                        wp:Workpiece=Workpiece(s.x,ps[0])
-                        self.plan_next(wp)
-                        s.put_in(wp)
-                        ps.remove(ps[0])
+        ps=self.products[:]
+        #print(ps)
+        for s in self.starts:
+            #print(s)
+            if not s.locked:
+                if len(ps)>0:
+                    wp:Workpiece=Workpiece.make_new(ps[0],s.x)
+                    self.plan_next(wp)
+                    s.put_in(wp)
+                    ps.remove(ps[0])
         self.products=ps
 
     def load_config(self):
@@ -121,8 +185,7 @@ class World:
             self.group_cranes[cfg.group].append(crane)
  
 
-    def mask_one_crane(self,crane_idx:int=0):
-        crane:Crane=self.all_cranes[crane_idx]
+    def mask_action(self,crane:Crane):
         mask = np.ones(5, dtype=np.int8)
         if crane.y<1e-4:
             mask[Actions.top]=0
@@ -140,7 +203,8 @@ class World:
     
 
     def plan_next(self,wp:Workpiece):
-        ps=self.product_procs[wp.prouct_code]
+        ps=self.product_procs[wp.product_code]
+        #print(ps[0])
         if wp.target_op_limit is None:#第一次规划，放到上料位
             wp.set_next_operate(ps[0],self.ops_dict)
             return
@@ -166,18 +230,16 @@ class World:
     
   
 
-    def translate(self,source:Crane|Slot,target:Crane|Slot):
+    def _translate(self,source:Crane|Slot,target:Crane|Slot):
         '''
         在天车和工作槽位间转移物料
         '''  
-        if target.carrying!=None:
-            logger.info(f'{target} already have {target.carrying}')
-            self.is_over=True
-            return
-        if source in self.starts:
-            self.products2starts()
+
         wp,reward=source.take_out()
         self.reward+=reward
+        if source in self.starts:
+            if self.enableAutoPut:
+                self.products2starts()
         if type(target) is Slot: 
             if target in self.ends:
                 self.reward+=10
@@ -186,6 +248,10 @@ class World:
             if target.cfg.op_key==2:
                 x=target.x+1
                 target=self.pos_slots[x]
+        if target.carrying!=None:
+            logger.info(f'{target} already have {target.carrying}')
+            self.is_over=True
+            return 
 
         target.put_in(wp)
         if type(target) is Crane:
@@ -195,24 +261,24 @@ class World:
 
 
 
-    def check_collide(self,crane:Crane)->bool:
+    def _check_collide(self,crane:Crane)->bool:
         '''
         天车移动后进行碰撞检测
         '''  
         collide=False
-        pos=self.round(crane.x)
+        pos=self._round(crane.x)
         slot=self.pos_slots.get(pos,None)
         if slot!=None and abs(crane.y-1)<0.1:
             wp:Workpiece=crane.carrying
-            if wp==None and crane.tip=='↑' and slot.carrying!=None:
-                self.translate(slot,crane)
+            if wp==None and crane.last_action==Actions.top and slot.carrying!=None:
+                self._translate(slot,crane)
                 
-            if wp!=None and crane.tip=='↓'  :
+            if wp!=None and crane.last_action==Actions.bottom  :
                 if wp.target_op_limit.op_key!=slot.cfg.op_key:
                     logger.info(f'{wp.target_op_limit.op_key} not same as {slot.cfg.op_key}')
                     self.is_over=True
                     return
-                self.translate(crane,slot)
+                self._translate(crane,slot)
                 
                     
         cranes=self.group_cranes[crane.cfg.group]
@@ -226,23 +292,10 @@ class World:
 
         return collide
         
-    def update(self):
-        self.step_count+=1
-        if self.is_over:
-            return
-        self.reward=0
-        for c in self.all_cranes:
-            c.step()
-
-        slots=self.pos_slots.values()
-        for s in slots:
-            s.step()
-        self.check_cranes()
-        self.check_slots()
-        self.score+=self.reward
 
 
-    def check_slots(self):
+
+    def _check_slots(self):
         slots=self.pos_slots.values()
         for s in slots:
             if s.cfg.op_key<10 or s.carrying is None:
@@ -253,37 +306,37 @@ class World:
                 logger.info(f'{s} op timeout!')
                 break  
 
-    def check_cranes(self):
+    def _check_cranes(self):
         for c in self.all_cranes:
-            if  self.out_bound(c):
+            if  self._out_bound(c):
                 self.is_over=True
                 
                 return
-            if self.check_collide(c):
+            if self._check_collide(c):
                 self.is_over=True
                 #logger.error(f'{c} collided!')
                 return
                 
-    def out_bound(self,crane:Crane):
+    def _out_bound(self,crane:Crane):
         x=crane.x
         y=crane.y
         x1,x2=self.group_limits[crane.cfg.group]
 
         return x<x1 or y<0 or x>x2 or y>self.max_y
     
-    def round(self,x:float)->int:
+    def _round(self,x:float)->int:
         return int(x+0.5)
-    def put_product(self):
+    def _put_product(self):
         if self.cur_prd_code is None:
             return
-        wp=Workpiece(0,self.cur_prd_code)
+        wp=Workpiece.make_new(self.cur_prd_code)
         self.plan_next(wp)
         start=self.get_free_slot(1,wp)
         if start is None:
             return
         start.put_in(wp)
 
-    def next_product(self):
+    def _next_product(self):
         self.cur_prd_code=None if len(self.products)<1 else self.products[0]
         if self.cur_prd_code!=None:
             self.products.remove(self.cur_prd_code)

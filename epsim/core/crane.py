@@ -10,21 +10,22 @@ class Crane(WorldObj):
         self.cfg:CraneData=cfg
         self.timer:int=0
         self.action:Actions=Actions.stay
-        self.tip=''
+        self.last_action:Actions=Actions.stay
         super().__init__(x)
         
     def __str__(self):
-        return self.tip+f' {self.cfg.name}'+super().__str__()
+        return Directions[self.last_action]+f' {self.cfg.name}'+super().__str__()
 
     def reset(self):
         super().reset()
         self._y=2.0
         self.timer=0
         self.action=Actions.stay
+        self.last_action=Actions.stay
 
     def set_command(self,act:Actions):
         self.action=act
-        self.tip=Directions[self.action]
+        self.last_action=act
 
     def step(self):
         if self.action==Actions.stay:
@@ -49,7 +50,7 @@ class Crane(WorldObj):
       
     @property
     def image(self):
-        img=get_crane_shape(self.action)
+        img=get_crane_shape(self.last_action)
         r,g,b=self.color.rgb
         img=set_color(img,r,g,b)
         if self.carrying!=None:

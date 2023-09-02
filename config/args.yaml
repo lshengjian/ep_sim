@@ -8,6 +8,6 @@ products:
 max_x: 32
 
 fps: 24
-tile_size: 32
+tile_size: 48
 cols: 17
 

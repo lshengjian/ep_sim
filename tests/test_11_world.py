@@ -17,11 +17,13 @@ def test_build_world():
 
 def test_set_products():
     wd=World()
-    wd.reset(['A']*3)
-    assert len(wd.products)==1
+    wd.reset()
+    wd.add_jobs(['A']*3)
+    assert len(wd.products)==3-2
     assert wd.starts[0].carrying!=None
     assert wd.starts[1].carrying!=None
 
-    
+if __name__ == "__main__":
+    test_set_products()    
     
 

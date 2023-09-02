@@ -7,7 +7,8 @@ from epsim.core import build_config,World,Workpiece,Actions
 
 def test_cranes():
     world=World()
-    world.reset(['A']*3)
+    world.reset()
+    world.add_jobs(['A']*3)
     
     assert world.starts[1].carrying!=None
     start=world.starts[0]

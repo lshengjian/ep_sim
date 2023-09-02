@@ -13,8 +13,17 @@ def test_image():
     #fill_coords(img, point_in_circle(0.5,0.5,0.45),(255,255,255))
     img=set_color(img,255,0,0)
     image = Image.fromarray(img)
-    
-    image.save('output.jpg')
+    img2=np.zeros((64,64,4),dtype=np.uint8)
+    for i in range(64):
+        for j in range(64):
+            img2[i,j,:3]=img[i,j]
+            if (img[i,j]==0).all() :
+                img2[i,j,3]=0
+            else:
+                img2[i,j,3]=255
+    image2 = Image.fromarray(img2)
+    image.save(dir+'/tests/demo.jpg')
+    image2.save(dir+'/tests/demo.png')
 
 if __name__ == "__main__":
    test_image()     

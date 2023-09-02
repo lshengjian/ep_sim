@@ -16,7 +16,7 @@ class ManualControl:
 
     def start(self):
         """Start the window display with blocking event loop"""
-        self.reset(self.seed)
+        #self.reset(self.seed)
 
         while not self.closed:
             for event in pygame.event.get():
@@ -51,18 +51,18 @@ class ManualControl:
         if key == "backspace":
             self.reset()
             return
+        # if key == "tab":
+        #     self.env.world.next_product()
+        #     self.env.render()
+        #     return
         if key == "tab":
-            self.env.world.next_product()
-            self.env.render()
-            return
-        if key == "z":
             self.env.next_crane()
             self.env.render()
             return
-        if key == "space":
-            self.env.world.put_product()
-            self.env.render()
-            return
+        # if key == "space":
+        #     self.env.world.put_product()
+        #     self.env.render()
+        #     return
 
         key_to_action = {
             "left": Actions.left,
