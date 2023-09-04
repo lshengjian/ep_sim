@@ -106,11 +106,11 @@ class World:
         self._check_slots()
         self.score+=self.reward
     
-    def get_observation(self):# todo
+    def get_state(self):# todo
         crane=self.all_cranes[self.cur_crane_index]
         return np.zeros((WorldObj.TILE_SIZE*3,WorldObj.TILE_SIZE*7))
     
-    def get_observations(self):
+    def get_observations(self,crane:Crane):
         return np.zeros((len(self.all_cranes),WorldObj.TILE_SIZE*3,WorldObj.TILE_SIZE*7))
 
     def reset(self):

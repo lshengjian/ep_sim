@@ -1,4 +1,5 @@
 import os,numpy as np
+from PIL import Image
 from gymnasium.error import DependencyNotInstalled
 from ...core.world import World
 from ...core.shapes import get_slot_shape ,get_crane_shape,get_workpiece_shape
@@ -28,6 +29,8 @@ class Renderer:
         self.ncol=ncol
         self.tile_size = tile_size
         self.window_size =  ncol*tile_size, tile_size*nrow*3
+        # print(nrow,ncol)
+        # print(self.window_size)
 
     
     def show_text(self,pygame,msg,x,y,fsize=16,shadow=False,color=(255, 221, 85)):
@@ -95,11 +98,13 @@ class Renderer:
             pygame.init()
             if mode == "human":
                 pygame.display.init()
-                pygame.display.set_caption("electroplate simulator")
+                pygame.display.set_caption("electroplate simulator|tab,q,→,↑,←,↓")
                 #self.font  =  pygame.font.Font(None,26)
-                self._surface = pygame.display.set_mode(self.window_size ,pygame.DOUBLEBUF, 32)
+                self._surface = pygame.display.set_mode(self.window_size)# ,pygame.DOUBLEBUF, 32)
             elif mode == "rgb_array":
-                self._surface = pygame.Surface(self.window_size,pygame.SRCALPHA, 32)
+                self._surface = pygame.Surface(self.window_size)#,pygame.SRCALPHA, 32)
+                
+                #print(self._surface.get_width(), self._surface.get_height())
 
         assert (
             self._surface is not None
@@ -118,9 +123,10 @@ class Renderer:
             if self.fps>0:
                 self.clock.tick(self.fps)
         elif mode == "rgb_array":
-            return np.transpose(
-                np.array(pygame.surfarray.pixels3d(self._surface)), axes=(1, 0, 2)
-            )
+            # img=pygame.image.tostring(self._surface, 'RGB')
+            # img=Image.frombytes('RGB', (self._surface.get_width(), self._surface.get_height()), img)
+            # img=img.resize((self.ncol*self.tile_size, self.tile_size*self.nrow*3))
+            return np.array(pygame.surfarray.pixels3d(self._surface)).swapaxes(0,1)
 
     def close(self):
         pass

@@ -3,6 +3,7 @@ import numpy as np
 import gymnasium as gym
 from gymnasium import Env, spaces
 from gymnasium.utils import seeding
+
 from ..core import Actions
 from ..core.componets import Color
 from ..core.world_object import WorldObj
@@ -54,7 +55,7 @@ class MyEnv(Env):
         Slot.WarningTime=args.alarm.warning
         Slot.FatalTime=args.alarm.fatal
         
-        rows=args.max_x/args.cols+1+2
+        rows=int(args.max_x/args.cols+0.5)+1
         self.renderer=Renderer(self.world,args.fps,rows,args.cols,args.tile_size)
         self.observation_space = spaces.Discrete(10) #todo
         self.action_space = spaces.Discrete(5) #todo
@@ -71,10 +72,8 @@ class MyEnv(Env):
         self.world.update()
         #print(crane)
         mask=self.world.mask_action(self.world.cur_crane)
-
-        if self.render_mode == "human":
-            self.render()
-        return (0, self.world.reward, self.world.is_over, False, {"action_mask": mask})
+        obs=self.render()
+        return (obs, self.world.reward, self.world.is_over, False, {"action_mask": mask})
     
     @property
     def reward(self):
@@ -93,18 +92,15 @@ class MyEnv(Env):
         self.world.add_jobs(ps)
         self.world.cur_crane.color=Color(255,0,0)
         mask=self.world.mask_action(self.world.cur_crane)
-        
-        
-        if self.render_mode == "human":
-            self.render()
-        return 0, {"action_mask": mask}
+        obs=self.render()
+        return obs, {"action_mask": mask}
 
     def render(self):
         if self.render_mode is None:
             gym.logger.warn(
                 "You are calling render method without specifying any render mode. "
             )
-            return
+            return None
         
         return self.renderer.render(self.render_mode)
     
