@@ -85,12 +85,10 @@ def make_tank():
         fill_coords(img, point_in_line(0.7, yhi, 0.9, ylo, r=0.03))
     return img
 
-@lru_cache(100)
+
 def get_progress_bar(p:int=100):
     p=np.clip(p,1,100)
-    
     n=int(WorldObj.TILE_SIZE*(100-p)/100)
-    #print(p,n)
     img=np.ones((WorldObj.TILE_SIZE//4,n,CHS),dtype=np.uint8)*255
     return img
 

@@ -1,4 +1,8 @@
 config_directory: demo
+alarm:
+  warning: 3
+  fatal: 10
+
 products:
 - code: A
   num: 3

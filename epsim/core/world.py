@@ -44,7 +44,11 @@ get_observations()
 4) 天车相撞 游戏结束
 '''
 class World:
-    def __init__(self,config_directory='demo', max_offset:int=32,isAutoPut=True):
+    def __init__(self,config_directory='demo', max_offset:int=32,
+            warning_time=3,fatal_time=10,isAutoPut=True):
+        Slot.WarningTime=warning_time
+        Slot.FatalTime=fatal_time
+        
         self.config_directory=config_directory
         self.enableAutoPut=isAutoPut
         self.is_over=False
@@ -139,6 +143,7 @@ class World:
                     s.put_in(wp)
                     ps.remove(ps[0])
         self.products=ps
+        self.cur_prd_code=None if len(ps)<1 else ps[0]
 
     def load_config(self):
         self.ops_dict,slots,cranes,procs=build_config(self.config_directory)
@@ -301,7 +306,7 @@ class World:
             if s.cfg.op_key<10 or s.carrying is None:
                 continue
             op:OpLimitData=s.carrying.target_op_limit
-            if s.timer>op.max_time+10:
+            if s.timer>op.max_time+Slot.FatalTime:
                 self.is_over=True
                 logger.info(f'{s} op timeout!')
                 break  
@@ -337,9 +342,23 @@ class World:
         start.put_in(wp)
 
     def _next_product(self):
-        self.cur_prd_code=None if len(self.products)<1 else self.products[0]
-        if self.cur_prd_code!=None:
-            self.products.remove(self.cur_prd_code)
+        cur_prd_code=None if len(self.products)<1 else self.products[0]
+        
+        if cur_prd_code is None:
+            self.cur_prd_code=None
+            return 
+        buff1=[]
+        buff2=[]
+        
+        for p in self.products:
+            if p==cur_prd_code:
+                buff1.append(p)
+            else:
+                buff2.append(p)
+        buff2.extend(buff1) 
+        self.products=buff2
+        self.cur_prd_code=buff2[0]
+
         
 
 

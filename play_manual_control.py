@@ -51,10 +51,10 @@ class ManualControl:
         if key == "backspace":
             self.reset()
             return
-        # if key == "tab":
-        #     self.env.world.next_product()
-        #     self.env.render()
-        #     return
+        if key == "q":
+            self.env.world._next_product()
+            self.env.render()
+            return
         if key == "tab":
             self.env.next_crane()
             self.env.render()
