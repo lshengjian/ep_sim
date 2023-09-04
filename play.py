@@ -15,7 +15,8 @@ def main(cfg: "DictConfig"):  # noqa: F821
       if terminated or truncated:
          observation, info = env.reset()
    env.close()
-   
+#git tag V1.0
+#git push origin --tags
 if __name__ == "__main__":
    main()
   

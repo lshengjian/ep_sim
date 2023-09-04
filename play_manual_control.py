@@ -3,6 +3,7 @@ from epsim.env.env import MyGrid
 from epsim.core import *
 import hydra
 import pygame
+
 class ManualControl:
     def __init__(
         self,
