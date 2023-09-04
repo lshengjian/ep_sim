@@ -8,8 +8,8 @@ from ..core.componets import Color
 from ..core.world_object import WorldObj
 from ..core.slot import Slot
 from ..core.world import World
-from .renderer import Renderer
-class MyGrid(Env):
+from .electroplating.renderer import Renderer
+class MyEnv(Env):
     """
     ## Action Space
     The action shape is `(1,)` in the range `{0, 4}` indicating

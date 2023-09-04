@@ -1,8 +1,8 @@
 import os,numpy as np
 from gymnasium.error import DependencyNotInstalled
-from ..core.world import World
-from ..core.shapes import get_slot_shape ,get_crane_shape,get_workpiece_shape
-from ..core.rendering import set_color,blend_imgs
+from ...core.world import World
+from ...core.shapes import get_slot_shape ,get_crane_shape,get_workpiece_shape
+from ...core.rendering import set_color,blend_imgs
 from copy import deepcopy
 RENDER_DIR=os.path.abspath(os.path.dirname(__file__) )
 

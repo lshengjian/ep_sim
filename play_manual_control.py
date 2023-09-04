@@ -1,5 +1,5 @@
 from __future__ import annotations
-from epsim.env.env import MyGrid
+from epsim.envs.myenv import MyEnv
 from epsim.core import *
 import hydra
 import pygame
@@ -80,7 +80,7 @@ class ManualControl:
 
 @hydra.main(config_path="./config", config_name="args", version_base="1.3")
 def main(args: "DictConfig"):  # noqa: F821
-    env=MyGrid("human",args)
+    env=MyEnv("human",args)
     env.reset(seed=123)
 
     manual_control = ManualControl(env, seed=1234)

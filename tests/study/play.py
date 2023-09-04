@@ -1,10 +1,10 @@
-from epsim.env.env import MyGrid
+from epsim.envs.myenv import MyEnv
 from epsim.polices import RandomSelect,MaskSelect
 
 import hydra
 @hydra.main(config_path="./config", config_name="args", version_base="1.3")
 def main(cfg: "DictConfig"):  # noqa: F821
-   env = MyGrid(render_mode="human",args=cfg)
+   env = MyEnv(render_mode="human",args=cfg)
    #policy=RandomSelect(env) 
    policy=MaskSelect(env) 
    observation, info = env.reset(seed=40)
