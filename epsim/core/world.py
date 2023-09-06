@@ -11,6 +11,7 @@ from .crane import Crane
 from .slot import Slot
 from .workpiece import Workpiece
 from .config import build_config
+
 logger = logging.getLogger(__name__)
 '''
 外部接口
@@ -69,6 +70,7 @@ class World:
         self.products=[]
         self.prd_idx=0
         self.cur_crane_index=0
+        self.state=None
         self.load_config()
     
     @property
@@ -106,12 +108,7 @@ class World:
         self._check_slots()
         self.score+=self.reward
     
-    def get_state(self):# todo
-        crane=self.all_cranes[self.cur_crane_index]
-        return np.zeros((WorldObj.TILE_SIZE*3,WorldObj.TILE_SIZE*7))
-    
-    def get_observations(self,crane:Crane):
-        return np.zeros((len(self.all_cranes),WorldObj.TILE_SIZE*3,WorldObj.TILE_SIZE*7))
+
 
     def reset(self):
         #self.load_config()
@@ -292,7 +289,7 @@ class World:
                 continue
             if abs(c.x-crane.x)<2:
                 collide=True
-                logger.info(f'{c} too close to {crane}')
+                logger.error(f'{c} too close to {crane}')
                 break
 
         return collide
@@ -308,12 +305,13 @@ class World:
             op:OpLimitData=s.carrying.target_op_limit
             if s.timer>op.max_time+Slot.FatalTime:
                 self.is_over=True
-                logger.info(f'{s} op timeout!')
+                logger.error(f'{s} op timeout!')
                 break  
 
     def _check_cranes(self):
         for c in self.all_cranes:
             if  self._out_bound(c):
+                logger.error(f'{c} out  bount!')
                 self.is_over=True
                 
                 return
@@ -326,6 +324,7 @@ class World:
         x=crane.x
         y=crane.y
         x1,x2=self.group_limits[crane.cfg.group]
+
 
         return x<x1 or y<0 or x>x2 or y>self.max_y
     

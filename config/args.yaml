@@ -1,17 +1,18 @@
+language: english  #english  or chinese
 config_directory: demo
 alarm:
-  warning: 8
-  fatal: 20
+  warning: 8 #超出此时间后告警
+  fatal: 20  #超出此时间后失败
 
 products:
 - code: A
   num: 3
 - code: B
-  num: 2
+  num: 3
 
-max_x: 32
+max_x: 32  #加工槽逻辑上排成一排，最远的偏移是多少个单元格
 
 fps: 24
-tile_size: 48
-cols: 17
+tile_size: 48      # 绘图单位方格的像数值
+screen_columns: 20 # 屏幕有多少列单位方格
 

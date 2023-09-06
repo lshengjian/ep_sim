@@ -2,5 +2,5 @@
 
 __author__="alex"
 
-from .image import *
+from .cut_image import *
 

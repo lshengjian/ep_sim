@@ -9,7 +9,8 @@ from ..core.componets import Color
 from ..core.world_object import WorldObj
 from ..core.slot import Slot
 from ..core.world import World
-from .electroplating.renderer import Renderer
+from epsim.utils import *
+from .render.renderer import Renderer
 class MyEnv(Env):
     """
     ## Action Space
@@ -51,15 +52,20 @@ class MyEnv(Env):
         
         self.args=args
         self.world=World(args.config_directory,args.max_x)
+        Renderer.LANG=args.language
         WorldObj.TILE_SIZE=args.tile_size
         Slot.WarningTime=args.alarm.warning
         Slot.FatalTime=args.alarm.fatal
+
+        ncols=args.screen_columns
         
-        rows=int(args.max_x/args.cols+0.5)+1
-        self.renderer=Renderer(self.world,args.fps,rows,args.cols,args.tile_size)
-        self.observation_space = spaces.Discrete(10) #todo
+        rows=int(args.max_x/ncols+0.5)+1
+        self.renderer=Renderer(self.world,args.fps,rows,ncols,args.tile_size)
+        self.observation_space = spaces.Box(0,255) #todo
         self.action_space = spaces.Discrete(5) #todo
         self.render_mode = render_mode
+        self.machines_img=None
+        self.product_img=None
 
     def next_crane(self):
         for c in self.world.all_cranes:
@@ -72,7 +78,8 @@ class MyEnv(Env):
         self.world.update()
         #print(crane)
         mask=self.world.mask_action(self.world.cur_crane)
-        obs=self.render()
+        self.render()
+        obs=self.get_observations()
         return (obs, self.world.reward, self.world.is_over, False, {"action_mask": mask})
     
     @property
@@ -90,6 +97,8 @@ class MyEnv(Env):
         for p in self.args.products:
             ps.extend([p.code]*p.num)
         self.world.add_jobs(ps)
+        for c in self.world.all_cranes:
+            c.color=Color(255,255,255)
         self.world.cur_crane.color=Color(255,0,0)
         mask=self.world.mask_action(self.world.cur_crane)
         obs=self.render()
@@ -102,9 +111,17 @@ class MyEnv(Env):
             )
             return None
         
-        return self.renderer.render(self.render_mode)
+        self.state= self.renderer.render(self.render_mode)
+        ms,ps=get_state(self.state,len(self.world.products),self.args.screen_columns,self.args.max_x,WorldObj.TILE_SIZE)
+        self.state=merge_two_images(ms,ps,WorldObj.TILE_SIZE)
+        self.machines_img=merge_images(ms)
+        return self.state
     
     def close(self):
         self.renderer.close()
 
- 
+    def get_state(self):# todo
+        return self.state
+    
+    def get_observations(self):
+        return get_observation(self.machines_img,self.world.cur_crane.x,13) 

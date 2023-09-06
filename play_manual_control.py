@@ -1,6 +1,7 @@
 from __future__ import annotations
 from epsim.envs.myenv import MyEnv
 from epsim.core import *
+from epsim.utils import save_img
 import hydra
 import pygame
 
@@ -30,10 +31,13 @@ class ManualControl:
                     self.key_handler(event)
 
     def step(self, action: Actions):
-        _, reward, terminated, truncated,self.info = self.env.step(action)
+        img, reward, terminated, truncated,self.info = self.env.step(action)
+        save_img(img,'outputs/'+self.env.world.cur_crane.cfg.name+'.jpg')
+        
+
         
         if terminated:
-            print("terminated!")
+            print("game over!")
             self.reset(self.seed)
         elif truncated:
             print("truncated!")

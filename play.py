@@ -1,5 +1,5 @@
 from epsim.envs.myenv import MyEnv
-from epsim.polices import RandomSelect,MaskSelect
+from polices import RandomSelect,MaskSelect
 from PIL import Image
 import hydra
 @hydra.main(config_path="./config", config_name="args", version_base="1.3")

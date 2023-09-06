@@ -4,6 +4,10 @@ import numpy as np
 
 from enum import IntEnum
 
+WINDOW_TITLE={
+    'chinese':'电镀仿真器 | 换天车(tab),换产品(q),移动(→,↑,←,↓)',
+    'english':'Electroplating simulator | Change the overhead crane (tab), change the product (q), move (→,↑,←,↓)', 
+}
 '''
 
 top
@@ -13,7 +17,7 @@ o-------->  x
 ↓ y 
 bottom
 '''
-class Actions(IntEnum): #顺时针
+class Actions(IntEnum): 
     stay = 0
     right = 1
     top = 2 # to top

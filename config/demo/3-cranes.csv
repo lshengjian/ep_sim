@@ -1,3 +1,4 @@
 group,name,offset,speed_x,speed_y
-1,H1,1,1,1
-2,H2,18,1,1
+1,H1,3,1,1
+1,H2,18,1,1
+2,H3,22,1,1
