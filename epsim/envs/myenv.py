@@ -128,7 +128,8 @@ class MyEnv(Env):
             if crane==cur_crane:continue
             rt.append(crane.state2data())
         for slot in self.world.group_slots[group]:
-            rt.append(slot.state2data())
+            if abs(slot.x-cur_crane.x)<=1:
+                rt.append(slot.state2data())
         return np.array(rt,dtype=np.float32)
     def render(self):
         if self.render_mode is None:
@@ -137,7 +138,7 @@ class MyEnv(Env):
             )
             return None
         
-        self.renderer.render(self.render_mode)
+        return self.renderer.render(self.render_mode)
         # ms,ps=get_state(self.state,len(self.world.products),self.args.screen_columns,self.args.max_x,WorldObj.TILE_SIZE)
         # self.state=merge_two_images(ms,ps,WorldObj.TILE_SIZE)
         # self.machines_img=merge_images(ms)
@@ -146,8 +147,8 @@ class MyEnv(Env):
     def close(self):
         self.renderer.close()
 
-    def get_state(self):# todo
-        return self.state
+    # def get_state(self):# todo
+    #     return self.state
     
     # def get_observations(self):
     #     return get_observation(self.machines_img,self.world.cur_crane.x,13) 

@@ -2,6 +2,10 @@ from __future__ import annotations
 from dataclasses import dataclass as component
 from typing import Tuple
 
+
+
+
+    
 @component
 class Color:
     r:int = 0

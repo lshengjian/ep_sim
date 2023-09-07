@@ -4,18 +4,18 @@ from PIL import Image
 import hydra
 @hydra.main(config_path="./config", config_name="args", version_base="1.3")
 def main(cfg: "DictConfig"):  # noqa: F821
-   env = MyEnv(render_mode="rgb_array",args=cfg)
+   env = MyEnv(render_mode="human",args=cfg)
    #policy=RandomSelect(env) 
    policy=MaskSelect(env) 
    observation, info = env.reset(seed=40)
-   for _ in range(10):
-      action=policy.decision(info)
+   for _ in range(1000):
+      action=policy.decision(observation,info)
       observation, reward, terminated, truncated, info = env.step(action)
       
       if terminated or truncated:
          observation, info = env.reset()
-   img = Image.fromarray(observation)
-   img.save("state.jpg")
+   # img = Image.fromarray(observation)
+   # img.save("state.jpg")
    env.close()
    
 # 

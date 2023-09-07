@@ -4,7 +4,7 @@ import numpy as np
 import random
 class MaskSelect(RandomSelect):
 
-    def decision(self,info):
+    def decision(self,obs,info):
         masks=info['action_mask']
         acts=np.argwhere(masks).reshape(-1)
         return random.choice(acts)

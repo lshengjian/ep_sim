@@ -174,9 +174,9 @@ class World:
                 self.group_limits[g]=[x1,x2]   
                 slot:Slot=Slot(x,s)
                 slot.color=self.ops_dict[slot.cfg.op_key].color
-                if s.op_key==START_KEY:
+                if s.op_key==SHARE.START_KEY:
                     self.starts.append(slot)
-                elif s.op_key==END_KEY:
+                elif s.op_key==SHARE.END_KEY:
                     self.ends.append(slot)
                 self.pos_slots[int(x)]=slot
                 self.group_slots[g].append(slot)
@@ -248,7 +248,7 @@ class World:
                 self.reward+=10
                 del wp
                 return 
-            if target.cfg.op_key==SWAP_KEY:
+            if target.cfg.op_key==SHARE.SWAP_KEY:
                 x=target.x+1
                 target=self.pos_slots[x]
         if target.carrying!=None:
@@ -301,7 +301,7 @@ class World:
     def _check_slots(self):
         slots=self.pos_slots.values()
         for s in slots:
-            if s.cfg.op_key<MIN_OP_KEY or s.carrying is None:
+            if s.cfg.op_key<SHARE.MIN_OP_KEY or s.carrying is None:
                 continue
             op:OpLimitData=s.carrying.target_op_limit
             if s.timer>op.max_time+Slot.FatalTime:

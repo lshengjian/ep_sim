@@ -3,10 +3,19 @@ from __future__ import annotations
 import numpy as np
 from enum import IntEnum
 
-START_KEY=101
-SWAP_KEY=102
-END_KEY=103
-MIN_OP_KEY=200
+class SHARE:
+    START_KEY:int=101
+    SWAP_KEY:int=102
+    END_KEY:int=103
+    MIN_OP_KEY:int=200
+    TILE_SIZE:int=32
+    MAX_X:int=32
+    MAX_Y:int=2
+    MAX_OP_TIME:int=100
+    OBJ_TYPE_SIZE:int=3
+    OP_TYPE1_SIZE:int=3
+    OP_TYPE2_SIZE:int=6
+    PRODUCT_TYPE_SIZE:int=3
 
 WINDOW_TITLE={
     'chinese':'电镀仿真器 | 换天车(tab),换产品(q),移动(→,↑,←,↓)',

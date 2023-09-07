@@ -12,7 +12,7 @@ products:
 
 max_x: 32  #加工槽逻辑上排成一排，最远的偏移是多少个单元格
 
-fps: 24
+fps: 0
 tile_size: 48      # 绘图单位方格的像数值
 screen_columns: 20 # 屏幕有多少列单位方格
 
