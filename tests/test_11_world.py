@@ -9,9 +9,9 @@ def test_build_world():
     wd=World()
     assert len(wd.group_cranes)==2
     x1,x2=wd.get_group_bound(1)
-    assert x1==1 and x2==16
+    assert x1==1 and x2==19
     x1,x2=wd.get_group_bound(2)
-    assert x1==17 and x2==24
+    assert x1==20 and x2==31
     assert wd.group_slots[1][-1].x+1==wd.group_slots[2][0].x # swap
 
 
@@ -19,7 +19,7 @@ def test_set_products():
     wd=World()
     wd.reset()
     wd.add_jobs(['A']*3)
-    assert len(wd.products)==3-2
+    assert len(wd.products)==1
     assert wd.starts[0].carrying!=None
     assert wd.starts[1].carrying!=None
 

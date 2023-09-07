@@ -1,8 +1,17 @@
 from __future__ import annotations
 from .constants import *
-from .componets import Color
+from .componets import Color,State
+from epsim.utils.onehost import *
 class WorldObj:
-    TILE_SIZE:32
+    TILE_SIZE:int=32
+    MAX_X:int=32
+    MAX_Y:int=2
+    MAX_OP_TIME:int=100
+    OBJ_TYPE_SIZE:int=3
+    OP_TYPE1_SIZE:int=3
+    OP_TYPE2_SIZE:int=6
+    PRODUCT_TYPE_SIZE:int=3
+
     """
     Base class for grid world objects
     """
@@ -18,13 +27,17 @@ class WorldObj:
         self._y:float = 1
         self.reset()
 
+
+    @property
+    def state(self)->State:
+        pass
     @property
     def x(self):
         pos=self._x
         if self.attached!=None:
             pos=self.attached.x
-        return pos 
-    
+        return pos  
+       
     @property
     def y(self):
         pos=self._y
@@ -49,6 +62,21 @@ class WorldObj:
     def __str__(self):
         flag='[W]' if self.carrying!=None else '  '
         return f'{flag} ({self.x:.1f},{self.y:.1f})'
+    
+    def state2data(self):
+        ds=self.state
+        d1=type2onehot(ds.obj_type,self.OBJ_TYPE_SIZE)
+        #print(d1.tolist())
+        d2=op_ket2onehots(ds.op_key,self.OP_TYPE1_SIZE,self.OP_TYPE2_SIZE)
+        d3=np.zeros(self.PRODUCT_TYPE_SIZE,dtype=np.float32) if ds.product_code=='' else \
+            type2onehot(ord(ds.product_code[0])-ord('A')+1,self.PRODUCT_TYPE_SIZE)
+        #print(d2.tolist(),' ',d3.tolist())
+        d4=np.array([ds.x/self.MAX_X,ds.y/self.MAX_Y])
+        d5=np.array([ds.op_duration,ds.op_time])/self.MAX_OP_TIME
+        #print(d4.tolist(),' ',d5.tolist())
+        return np.concatenate((d1,d2,d3,d4,d5),axis=0)
+
+
 
  
 '''

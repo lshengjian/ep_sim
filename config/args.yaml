@@ -1,4 +1,4 @@
-language: english  #english  or chinese
+language: chinese  #english  or chinese
 config_directory: demo
 alarm:
   warning: 8 #超出此时间后告警

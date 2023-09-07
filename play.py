@@ -18,7 +18,7 @@ def main(cfg: "DictConfig"):  # noqa: F821
    img.save("state.jpg")
    env.close()
    
-# sprite_image
+# 
 #git tag V1.0
 #git push origin --tags
 if __name__ == "__main__":

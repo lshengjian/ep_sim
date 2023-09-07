@@ -114,21 +114,21 @@ class Renderer:
 
         if self.clock is None:
             self.clock = pygame.time.Clock()
-
-        self._draw(pygame)
-        
-
-        
+        if mode == "human"  or  mode == "rgb_array" :
+            self._draw(pygame)
         if mode == "human":
             pygame.event.pump()
-            pygame.display.update()
+            pygame.display.flip()
             if self.fps>0:
                 self.clock.tick(self.fps)
+                print('render')
+
+
         #elif mode == "rgb_array":
             # img=pygame.image.tostring(self._surface, 'RGB')
             # img=Image.frombytes('RGB', (self._surface.get_width(), self._surface.get_height()), img)
             # img=img.resize((self.ncol*self.tile_size, self.tile_size*self.nrow*3))
-        return np.array(pygame.surfarray.pixels3d(self._surface)).swapaxes(0,1)
+        #return np.array(pygame.surfarray.pixels3d(self._surface)).swapaxes(0,1)
 
     def close(self):
         pass

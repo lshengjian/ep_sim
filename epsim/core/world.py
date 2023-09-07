@@ -12,6 +12,7 @@ from .slot import Slot
 from .workpiece import Workpiece
 from .config import build_config
 
+
 logger = logging.getLogger(__name__)
 '''
 外部接口
@@ -173,9 +174,9 @@ class World:
                 self.group_limits[g]=[x1,x2]   
                 slot:Slot=Slot(x,s)
                 slot.color=self.ops_dict[slot.cfg.op_key].color
-                if s.op_key==1:
+                if s.op_key==START_KEY:
                     self.starts.append(slot)
-                elif s.op_key==3:
+                elif s.op_key==END_KEY:
                     self.ends.append(slot)
                 self.pos_slots[int(x)]=slot
                 self.group_slots[g].append(slot)
@@ -247,7 +248,7 @@ class World:
                 self.reward+=10
                 del wp
                 return 
-            if target.cfg.op_key==2:
+            if target.cfg.op_key==SWAP_KEY:
                 x=target.x+1
                 target=self.pos_slots[x]
         if target.carrying!=None:
@@ -287,7 +288,7 @@ class World:
         for c in cranes:
             if c==crane:
                 continue
-            if abs(c.x-crane.x)<2:
+            if abs(c.x-crane.x)<=2:
                 collide=True
                 logger.error(f'{c} too close to {crane}')
                 break
@@ -300,7 +301,7 @@ class World:
     def _check_slots(self):
         slots=self.pos_slots.values()
         for s in slots:
-            if s.cfg.op_key<10 or s.carrying is None:
+            if s.cfg.op_key<MIN_OP_KEY or s.carrying is None:
                 continue
             op:OpLimitData=s.carrying.target_op_limit
             if s.timer>op.max_time+Slot.FatalTime:

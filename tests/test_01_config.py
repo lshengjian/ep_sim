@@ -21,10 +21,10 @@ def test_list_files():
 
 def test_build():
     ops_map,slots,cranes,procs=build_config('demo')
-    assert ops_map[1].name=='上料'
-    assert str(slots[0])=='1 上料 1|2'
-    assert str(cranes[0])=='(1)H1 1 (1.0,1.0)'
-    assert str(procs[0])=='[A]上料 0->0'
+    assert ops_map[101].name=='上料'
+    assert str(slots[0]) =='[1] 上料 1|2'
+    assert str(cranes[0])=='[1] H1 3 (1.0,1.0)'
+    assert str(procs[0]) =='[A] 上料 0->0'
 
 
 
@@ -32,7 +32,7 @@ def test_build():
 import hydra
 @hydra.main(config_path="../config", config_name="args", version_base="1.3")
 def main(cfg: "DictConfig"):  # noqa: F821
-    assert cfg.tile_size==32
+    assert cfg.tile_size==48
     assert cfg.fps==24
     assert cfg.products[0].code=='A' and cfg.products[0].num==3
 

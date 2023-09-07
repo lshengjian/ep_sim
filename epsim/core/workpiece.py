@@ -2,7 +2,7 @@ from .world_object import WorldObj
 
 from .constants import *
 from typing import Dict
-from .componets import OpLimitData,OperateData
+from .componets import OpLimitData,OperateData,State
 from .shapes import get_workpiece_shape
 from .rendering import set_color
 class Workpiece(WorldObj):
@@ -12,7 +12,13 @@ class Workpiece(WorldObj):
         self.product_code=product_code
         self.target_op_limit:OpLimitData=None
         super().__init__(x)
-    
+
+    @property
+    def state(self)->State:
+        op_limit=self.target_op_limit
+        assert op_limit!=None
+        return State(ObjType.Workpiece,op_limit.op_key,self.product_code,self.x ,self.y,op_limit.duration)
+        
     @staticmethod
     def make_new(code='A',x=0):
         rt=Workpiece(code,x)

@@ -13,11 +13,20 @@ class Slot(WorldObj):#缓存及加工位
         self.timer:int=0
         self.locked=False
         super().__init__(x)
-        
+
+    @property
+    def state(self)->State:
+        wp:Workpiece=self.carrying
+        data=State(ObjType.Slot,self.cfg.op_key)
+        if wp!=None:
+            data=wp.state.clone()
+        data.op_time=self.timer
+        return data
+            
     def __str__(self):
         #locked='X' if self.locked else ''
         old=super().__str__()
-        return f'{self.cfg.op_name} {old})'
+        return f'{old} {self.cfg.op_name}'
     
     def reset(self):
         super().reset()
@@ -37,7 +46,7 @@ class Slot(WorldObj):#缓存及加工位
         wp:Workpiece=self.carrying
         self.carrying=None
         self.locked=False
-        if wp is None or self.cfg.op_key<10:
+        if wp is None or self.cfg.op_key<MIN_OP_KEY:
             return wp,0
         op:OpLimitData=wp.target_op_limit
         op_time=(wp.target_op_limit.min_time+wp.target_op_limit.max_time)//2
@@ -51,15 +60,23 @@ class Slot(WorldObj):#缓存及加工位
         elif self.timer<=op.min_time-self.WarningTime:
             r=-3
         if op.max_time<self.timer<op.max_time+self.FatalTime:
-            r=-1
+            r=-2
         elif self.timer>=op.max_time+self.FatalTime:
-            r=-3
+            r=-5
         return wp,r    
 
 
     def step(self):
-        if self.carrying!=None and self.cfg.op_key>9:
-            self.timer+=1
+        self.left=9999
+        if self.carrying is None or  self.cfg.op_key<MIN_OP_KEY:
+            return
+        wp:Workpiece=self.carrying
+        self.timer+=1
+        op:OpLimitData=wp.target_op_limit
+        op_time=(wp.target_op_limit.min_time+wp.target_op_limit.max_time)//2
+        self.left=op_time-self.timer
+
+
 
     @property
     def image(self):
@@ -69,16 +86,15 @@ class Slot(WorldObj):#缓存及加工位
         if self.carrying!=None:
             wp:Workpiece=self.carrying
             img=blend_imgs(wp.image,img,(0,self.TILE_SIZE//2))
-            if self.cfg.op_key>9:
-                op_time=wp.target_op_limit.min_time
-                #(wp.target_op_limit.min_time+wp.target_op_limit.max_time)//2
-                left=op_time-self.timer
+            if self.cfg.op_key>=MIN_OP_KEY:
+                op_time=(wp.target_op_limit.min_time+wp.target_op_limit.max_time)//2
+                #self.left=op_time-self.timer
                 p=int(self.timer/op_time*100+0.5)
                 pg_bar=get_progress_bar(p)
                 color=(0,255,0)
-                if left<Slot.WarningTime:#max(op_time*0.1,5)
+                if self.time+Slot.WarningTime>=wp.target_op_limit.max_time:#max(op_time*0.1,5)
                     color=(255,0,0)
-                elif left<Slot.FatalTime: #max(op_time*0.2,10)
+                elif self.time+Slot.FatalTime>=wp.target_op_limit.max_time: #max(op_time*0.2,10)
                     color=(255,255,0)
                 pg_bar=set_color(pg_bar,*color)
                 img=blend_imgs(pg_bar,img,(int(self.TILE_SIZE*0.06),self.TILE_SIZE*2-pg_bar.shape[0]))

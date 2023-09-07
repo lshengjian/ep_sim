@@ -2,7 +2,7 @@ from .world_object import WorldObj
 from .constants import *
 from .shapes import get_crane_shape
 from .rendering import set_color,blend_imgs
-from .componets import CraneData
+from .componets import CraneData,State
 from .workpiece import Workpiece
 
 class Crane(WorldObj):
@@ -12,9 +12,18 @@ class Crane(WorldObj):
         self.action:Actions=Actions.stay
         self.last_action:Actions=Actions.stay
         super().__init__(x)
-        
+    
+    @property
+    def state(self)->State:
+        wp:Workpiece=self.carrying
+        data=State(ObjType.Crane)
+        if wp!=None:
+            data=wp.state.clone()
+            data.obj_type=ObjType.Crane
+        return data  
+         
     def __str__(self):
-        return Directions[self.last_action]+f' {self.cfg.name}'+super().__str__()
+        return super().__str__()+f' {self.cfg.name} {Directions[self.last_action]}'
 
     def reset(self):
         super().reset()
