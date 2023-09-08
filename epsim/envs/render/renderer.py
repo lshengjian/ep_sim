@@ -2,6 +2,7 @@ import os,numpy as np
 #from PIL import Image
 from gymnasium.error import DependencyNotInstalled
 from ...core.constants import WINDOW_TITLE
+from ...core.constants import SHARE
 from ...core.world import World
 from ...core.shapes import get_slot_shape ,get_crane_shape,get_workpiece_shape
 from ...core.rendering import set_color,blend_imgs
@@ -22,14 +23,14 @@ def make_surface(img,pygame):
 
 class Renderer:
     LANG:str='chinese'
-    def __init__(self,world:World,fps:int=4,nrow=3,ncol=17,tile_size=32):
+    def __init__(self,world:World,fps:int=4,nrow=3,ncol=17):
         self.world:World=world
         self.fps=fps
         self._surface = None
         self.clock = None
         self.nrow=nrow
         self.ncol=ncol
-        self.tile_size = tile_size
+        tile_size=SHARE.TILE_SIZE
         self.window_size =  ncol*tile_size, tile_size*nrow*3
         # print(nrow,ncol)
         # print(self.window_size)
@@ -47,14 +48,15 @@ class Renderer:
             img=get_workpiece_shape(code)
             if self.world.cur_prd_code==code:
                 img=set_color(img,245,16,40)
-            self._surface.blit(make_surface(img,pygame),(x,self.tile_size))
-            x+=self.tile_size
+            self._surface.blit(make_surface(img,pygame),(x,SHARE.TILE_SIZE))
+            x+=SHARE.TILE_SIZE
         
     def _draw(self,pygame):
         #self._check_cache()
         #xs=list(map(lambda c:int(c.x+0.5) , self.world.all_cranes))
         self._surface.fill((0,0,0))
-        self.show_text(pygame,f'R:{self.world.reward} S:{self.world.score} T:{self.world.step_count}',int(self.window_size[0]*0.618+0.5),6,self.tile_size,True,(155,34,237))
+        self.show_text(pygame,f'R:{self.world.reward} S:{self.world.score} T:{self.world.step_count}',
+                       int(self.window_size[0]*0.618+0.5),6,SHARE.TILE_SIZE,True,(155,34,237))
         self._draw_products(pygame)
         merges=[]
         crane_offsets={}#:Dict[int,Crane]
@@ -67,13 +69,13 @@ class Renderer:
             r=x//self.ncol
             crane=x%self.ncol
             if x not in merges:
-                self._surface.blit(make_surface(s.image,pygame),(crane*self.tile_size,self.tile_size*(3*(r+1))))
+                self._surface.blit(make_surface(s.image,pygame),(crane*SHARE.TILE_SIZE,SHARE.TILE_SIZE*(3*(r+1))))
             else:
                 img2=deepcopy(s.image)
                 img2[:,:,:]=s.image
                 crane_img=crane_offsets[x].image
-                img2=blend_imgs(crane_img,img2,(0,(crane_offsets[x].y-1)*self.tile_size))
-                self._surface.blit(make_surface(img2,pygame),(crane*self.tile_size,self.tile_size*(3*(r+1))))
+                img2=blend_imgs(crane_img,img2,(0,(crane_offsets[x].y-1)*SHARE.TILE_SIZE))
+                self._surface.blit(make_surface(img2,pygame),(crane*SHARE.TILE_SIZE,SHARE.TILE_SIZE*(3*(r+1))))
             
                 
         for crane in self.world.all_cranes:
@@ -82,7 +84,7 @@ class Renderer:
             r=x//self.ncol
             c=x%self.ncol
             img=make_surface(crane.image,pygame)
-            self._surface.blit(img,(c*self.tile_size,(crane.y+3*r+2)*self.tile_size))
+            self._surface.blit(img,(c*SHARE.TILE_SIZE,(crane.y+3*r+2)*SHARE.TILE_SIZE))
            
 
 
@@ -128,7 +130,7 @@ class Renderer:
         #elif mode == "rgb_array":
             # img=pygame.image.tostring(self._surface, 'RGB')
             # img=Image.frombytes('RGB', (self._surface.get_width(), self._surface.get_height()), img)
-            # img=img.resize((self.ncol*self.tile_size, self.tile_size*self.nrow*3))
+            # img=img.resize((self.ncol*SHARE.TILE_SIZE, SHARE.TILE_SIZE*self.nrow*3))
         return np.array(pygame.surfarray.pixels3d(self._surface)).swapaxes(0,1)
 
     def close(self):

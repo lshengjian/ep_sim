@@ -4,7 +4,11 @@ import numpy as np
 import random
 class MaskSelect(RandomSelect):
 
-    def decision(self,obs,info):
-        masks=info['action_masks']
-        acts=np.argwhere(masks).reshape(-1)
-        return random.choice(acts)
+    def decision(self,obs:dict,infos:dict):
+        actions={}
+        for k,info in infos.items():
+            print(k,info)
+            masks=info['action_masks']
+            acts=np.argwhere(masks).reshape(-1)
+            actions[k]=random.choice(acts)
+        return actions

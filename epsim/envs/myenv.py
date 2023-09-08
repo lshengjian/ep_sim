@@ -53,15 +53,15 @@ class MyEnv(Env):
         self.args=args
         self.world=World(args.config_directory,args.max_x)
         Renderer.LANG=args.language
-        WorldObj.TILE_SIZE=args.tile_size
-        Slot.WarningTime=args.alarm.warning
-        Slot.FatalTime=args.alarm.fatal
+        SHARE.TILE_SIZE=args.tile_size
+        SHARE.CHECK_TIME1=args.alarm.warning
+        SHARE.CHECK_TIME2=args.alarm.fatal
 
         ncols=args.screen_columns
         
         rows=int(args.max_x/ncols+0.5)+1
-        self.renderer=Renderer(self.world,args.fps,rows,ncols,args.tile_size)
-        self.observation_space = spaces.Box(0,1,(5*19,)) #todo
+        self.renderer=Renderer(self.world,args.fps,rows,ncols)
+        self.observation_space = spaces.Box(0,1,(15*19,)) #todo
         self.action_space = spaces.Discrete(5) #todo
         self.render_mode = render_mode
         self.machines_img=None
@@ -77,7 +77,7 @@ class MyEnv(Env):
         self.world.set_command(a)
         self.world.update()
         #print(crane)
-        self.masks=self.world.mask_action(self.world.cur_crane)
+        self.masks=self.world.get_masks(self.world.cur_crane)
         if self.render_mode!='ansi':
             self.render()
         obs=self.world.get_observation(self.world.cur_crane_index).ravel()
@@ -105,7 +105,7 @@ class MyEnv(Env):
         for c in self.world.all_cranes:
             c.color=Color(255,255,255)
         self.world.cur_crane.color=Color(255,0,0)
-        self.masks=self.world.mask_action(self.world.cur_crane)
+        self.masks=self.world.get_masks(self.world.cur_crane)
         if self.render_mode!='ansi':
             self.render()
         obs=self.world.get_observation(0).ravel()

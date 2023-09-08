@@ -6,8 +6,7 @@ from .shapes import get_slot_shape,get_progress_bar
 from .rendering import set_color,blend_imgs
 from .workpiece import Workpiece
 class Slot(WorldObj):#缓存及加工位
-    WarningTime:int=3
-    FatalTime:int=10
+
     def __init__(self, x:int,cfg:SlotData ):#,ops_dict: Dict[int,OperateData]
         assert x in cfg.offsets
         self.cfg:SlotData=cfg
@@ -58,13 +57,13 @@ class Slot(WorldObj):#缓存及加工位
         elif op.min_time<=self.timer<op.max_time:
             return wp,1
         r=0
-        if op.min_time-self.WarningTime<self.timer<op.min_time :
+        if op.min_time-SHARE.CHECK_TIME1<self.timer<op.min_time :
             r=-1
-        elif self.timer<=op.min_time-self.WarningTime:
+        elif self.timer<=op.min_time-SHARE.CHECK_TIME1:
             r=-3
-        if op.max_time<self.timer<op.max_time+self.FatalTime:
+        if op.max_time<self.timer<op.max_time+SHARE.CHECK_TIME2:
             r=-2
-        elif self.timer>=op.max_time+self.FatalTime:
+        elif self.timer>=op.max_time+SHARE.CHECK_TIME2:
             r=-5
         return wp,r    
 

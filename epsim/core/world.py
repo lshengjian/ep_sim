@@ -213,7 +213,8 @@ class World:
             self.group_cranes[cfg.group].append(crane)
  
 
-    def mask_action(self,crane:Crane):
+    def get_masks(self,crane:Crane):
+        
         eps=1e-4
         wp:Workpiece=crane.carrying
         if wp is None and crane.y+eps<2:

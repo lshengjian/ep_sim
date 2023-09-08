@@ -1,19 +1,18 @@
-from epsim.envs.myenv import MyEnv
+from epsim.envs import parallel_env
 from polices import RandomSelect,MaskSelect
-from PIL import Image
+import numpy as np
 import hydra
 @hydra.main(config_path="./config", config_name="args", version_base="1.3")
 def main(cfg: "DictConfig"):  # noqa: F821
-   env = MyEnv(render_mode="human",args=cfg)
-   #policy=RandomSelect(env) 
+   env = parallel_env(render_mode="human",args=cfg)
    policy=MaskSelect(env) 
-   observation, info = env.reset(seed=40)
+   observations, infos = env.reset(seed=40)
    for _ in range(1000):
-      action=policy.decision(observation,info)
-      observation, reward, terminated, truncated, info = env.step(action)
+      actions=policy.decision(observations,infos)
+      observations, rewards, terminateds, truncateds, infos = env.step(actions)
       
-      if terminated or truncated:
-         observation, info = env.reset()
+      if np.any(terminateds):
+         observations, infos = env.reset()
    # img = Image.fromarray(observation)
    # img.save("state.jpg")
    env.close()

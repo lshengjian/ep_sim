@@ -19,6 +19,10 @@ class SHARE:
     MIN_AGENT_SAFE_DISTANCE:int=2
     TILE_SIZE:int=48
 
+    CHECK_TIME1:int=3
+    CHECK_TIME2:int=20
+
+
 WINDOW_TITLE={
     'chinese':'电镀仿真器 | 换天车(tab),换产品(q),移动(→,↑,←,↓)',
     'english':'Electroplating simulator | Change the overhead crane (tab), change the product (q), move (→,↑,←,↓)', 

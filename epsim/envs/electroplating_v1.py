@@ -1,5 +1,5 @@
-from .electroplating.simulator import (  # noqa: F401
-    ManualPolicy,
+from .electroplating.parallel_epsim import ( 
+
     env,
     parallel_env,
     raw_env,

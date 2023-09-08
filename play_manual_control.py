@@ -83,7 +83,7 @@ class ManualControl:
         }
         if key in key_to_action.keys():
             action = key_to_action[key]
-            if self.info['action_mask'][action]:
+            if self.info['action_masks'][action]:
                 self.step(action)
         else:
             self.step(Actions.stay)

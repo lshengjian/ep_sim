@@ -154,7 +154,7 @@ from pettingzoo.utils import agent_selector, wrappers
 from pettingzoo.utils.conversions import parallel_wrapper_fn
 
 from .manual_policy import ManualPolicy  # noqa: F401
-from .renderer import Renderer
+from ..render.renderer import Renderer
 from epsim.core import World,WorldObj,Slot,Crane,Actions
 from epsim.core.componets import Color
 #sys.dont_write_bytecode = True
@@ -479,7 +479,7 @@ class raw_env(AECEnv, EzPickle):
         self.world.set_command(action)
         self.world.update()
         #print(crane)
-        mask=self.world.mask_action(self.world.cur_crane)
+        mask=self.world.get_masks(self.world.cur_crane)
         self.next_crane()
 
         if self.render_mode == "human":
@@ -523,7 +523,7 @@ class raw_env(AECEnv, EzPickle):
             ps.extend([p.code]*p.num)
         self.world.add_jobs(ps)
         #self.world.cur_crane.color=Color(255,0,0)
-        mask=self.world.mask_action(self.world.cur_crane)
+        mask=self.world.get_masks(self.world.cur_crane)
 
 
 
