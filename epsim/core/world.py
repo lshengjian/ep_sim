@@ -109,7 +109,32 @@ class World:
         self._check_slots()
         self.score+=self.reward
     
+    def get_state(self): #仿真系统的全部状态数据
+        rt=[]
+        for crane in self.all_cranes:
+            rt.append(crane.state2data())
+        for slot in self.pos_slots.values:
+            rt.append(slot.state2data()) 
+        for pcode in self.products:
+            wp=Workpiece.make_new(pcode)
+            rt.append(wp.state2data())
+        return np.array(rt,dtype=np.float32)
 
+    def get_observation(self,crane_idx:int=0):
+        assert 0<=crane_idx<len(self.all_cranes)
+        agv:Crane=self.all_cranes[crane_idx]
+        group:int=agv.cfg.group
+        rt=[]
+        rt.append(agv.state2data())
+        for crane in self.group_cranes[group]:
+            if agv==crane:continue
+            rt.append(crane.state2data())
+        for slot in self.group_slots[group]:
+            if abs(slot.x-agv.x)<=SHARE.MAX_AGENT_SEE_DISTANCE:
+                rt.append(slot.state2data())
+        for k in range(len(rt),2*SHARE.MAX_AGENT_SEE_DISTANCE+1):
+            rt.append([0.]*len(rt[0]))
+        return np.array(rt,dtype=np.float32)
 
     def reset(self):
         #self.load_config()
@@ -189,19 +214,68 @@ class World:
  
 
     def mask_action(self,crane:Crane):
+        eps=1e-4
+        wp:Workpiece=crane.carrying
+        if wp is None and crane.y+eps<2:
+            mask = np.zeros(5, dtype=np.int8)
+            mask[Actions.bottom]=1
+            return mask
+        dir=set()
         mask = np.ones(5, dtype=np.int8)
-        if crane.y<1e-4:
+
+        x1,x2=self.group_limits[crane.cfg.group]
+        
+        if wp != None:
+            mask[Actions.left]=0
+            mask[Actions.right]=0
+            for x in range(x1,x2+1):
+                if x in self.pos_slots:
+                    slot=self.pos_slots[x]
+                    wp2:Workpiece=slot.carrying
+                    if wp2 is None and wp.target_op_limit.op_key==slot.cfg.op_key:
+                        if slot.x<crane.x:
+                            dir.add(-1)
+                        elif slot.x>crane.x:
+                            dir.add(1)
+                    
+            if -1 in dir:mask[Actions.left]=1
+            if 1 in dir:mask[Actions.right]=1
+
+        if crane.y<eps:
             mask[Actions.top]=0
-        elif crane.y>(self.max_y-1e-4):
+        elif crane.y>(self.max_y-eps):
             mask[Actions.bottom]=0
-        if 1e-4<crane.y<(self.max_y-1e-4):
+        if eps<crane.y<(self.max_y-eps):
             mask[Actions.left]=0
             mask[Actions.right]=0
         
-        if crane.x<1e-4:
+        
+        if crane.x-eps<x1:
             mask[Actions.left]=0
-        elif crane.x>(self.max_x-1e-4):
+        elif crane.x+eps>x2:
             mask[Actions.right]=0
+
+        
+        if wp!=None and abs(wp.y-1)<eps:
+            mask[Actions.bottom]=0
+        if wp!=None and abs(wp.y)<eps:
+            x=self._round(wp.x)
+            if x not in self.pos_slots:
+                mask[Actions.bottom]=0
+            else:
+                slot=self.pos_slots[x]
+                wp2:Workpiece=slot.carrying
+                if wp2!=None or wp.target_op_limit.op_key!=slot.cfg.op_key:
+                    mask[Actions.bottom]=0
+        
+        for agv in self.all_cranes:
+            if agv==crane:continue
+            if agv.x>crane.x and (agv.x-crane.x)<=SHARE.MIN_AGENT_SAFE_DISTANCE:
+                mask[Actions.right]=0
+            if agv.x<crane.x and (crane.x-agv.x)<=SHARE.MIN_AGENT_SAFE_DISTANCE:
+                mask[Actions.left]=0
+
+
         return mask
     
 
@@ -288,7 +362,7 @@ class World:
         for c in cranes:
             if c==crane:
                 continue
-            if abs(c.x-crane.x)<=2:
+            if abs(c.x-crane.x)<=SHARE.MIN_AGENT_SAFE_DISTANCE:
                 collide=True
                 logger.error(f'{c} too close to {crane}')
                 break

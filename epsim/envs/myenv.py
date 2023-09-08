@@ -80,10 +80,8 @@ class MyEnv(Env):
         self.masks=self.world.mask_action(self.world.cur_crane)
         if self.render_mode!='ansi':
             self.render()
-        
-        rt= (self._get_observation().reshape((-1,)), self.world.reward, self.world.is_over, False, {"action_masks": self.masks})
-        #self.world.next_crane()
-        return rt
+        obs=self.world.get_observation(self.world.cur_crane_index).ravel()
+        return obs,self.world.reward, self.world.is_over, False, {"action_masks": self.masks}
     def action_masks(self) -> List[bool]:
         masks=self.masks
         acts=np.argwhere(masks).reshape(-1)
@@ -110,35 +108,13 @@ class MyEnv(Env):
         self.masks=self.world.mask_action(self.world.cur_crane)
         if self.render_mode!='ansi':
             self.render()
+        obs=self.world.get_observation(0).ravel()
         
-        return self._get_observation().reshape((-1,)), {"action_masks": self.masks}
+        return obs, {"action_masks": self.masks}
 
-    def _get_state(self): 
-        rt=[]
-        for crane in self.world.all_cranes:
-            rt.append(crane.state2data())
-        for slot in self.world.pos_slots.values:
-            rt.append(slot.state2data()) 
-        for pcode in self.world.products:
-            wp=Workpiece.make_new(pcode)
-            rt.append(wp.state2data())
-        return np.array(rt,dtype=np.float32)
 
-    def _get_observation(self):
-        cur_crane:Crane=self.world.cur_crane
-        group:int=cur_crane.cfg.group
-        #x1,x2=self.world.group_limits[group]
-        rt=[]
-        rt.append(cur_crane.state2data())
-        for crane in self.world.group_cranes[group]:
-            if crane==cur_crane:continue
-            rt.append(crane.state2data())
-        for slot in self.world.group_slots[group]:
-            if abs(slot.x-cur_crane.x)<=1:
-                rt.append(slot.state2data())
-        for k in range(len(rt),5):
-            rt.append([0.]*19)
-        return np.array(rt,dtype=np.float32)
+
+
     def render(self):
         if self.render_mode is None:
             gym.logger.warn(

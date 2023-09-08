@@ -15,6 +15,8 @@ class SHARE:
     PRODUCT_TYPE_SIZE:int=3
     MAX_X:int=100
     MAX_Y:int=2
+    MAX_AGENT_SEE_DISTANCE:int=7
+    MIN_AGENT_SAFE_DISTANCE:int=2
     TILE_SIZE:int=48
 
 WINDOW_TITLE={
