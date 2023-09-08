@@ -61,7 +61,7 @@ class MyEnv(Env):
         
         rows=int(args.max_x/ncols+0.5)+1
         self.renderer=Renderer(self.world,args.fps,rows,ncols,args.tile_size)
-        self.observation_space = spaces.Box(0,255) #todo
+        self.observation_space = spaces.Box(0,1,(5*19,)) #todo
         self.action_space = spaces.Discrete(5) #todo
         self.render_mode = render_mode
         self.machines_img=None
@@ -77,12 +77,18 @@ class MyEnv(Env):
         self.world.set_command(a)
         self.world.update()
         #print(crane)
-        mask=self.world.mask_action(self.world.cur_crane)
+        self.masks=self.world.mask_action(self.world.cur_crane)
         if self.render_mode!='ansi':
             self.render()
-        #obs=self.get_observations()
-        return (self._get_observation(), self.world.reward, self.world.is_over, False, {"action_mask": mask})
-    
+        
+        rt= (self._get_observation().reshape((-1,)), self.world.reward, self.world.is_over, False, {"action_masks": self.masks})
+        #self.world.next_crane()
+        return rt
+    def action_masks(self) -> List[bool]:
+        masks=self.masks
+        acts=np.argwhere(masks).reshape(-1)
+        return acts.tolist()
+
     @property
     def reward(self):
         return self.world.reward
@@ -101,11 +107,11 @@ class MyEnv(Env):
         for c in self.world.all_cranes:
             c.color=Color(255,255,255)
         self.world.cur_crane.color=Color(255,0,0)
-        mask=self.world.mask_action(self.world.cur_crane)
+        self.masks=self.world.mask_action(self.world.cur_crane)
         if self.render_mode!='ansi':
             self.render()
         
-        return self._get_observation(), {"action_mask": mask}
+        return self._get_observation().reshape((-1,)), {"action_masks": self.masks}
 
     def _get_state(self): 
         rt=[]
@@ -130,6 +136,8 @@ class MyEnv(Env):
         for slot in self.world.group_slots[group]:
             if abs(slot.x-cur_crane.x)<=1:
                 rt.append(slot.state2data())
+        for k in range(len(rt),5):
+            rt.append([0.]*19)
         return np.array(rt,dtype=np.float32)
     def render(self):
         if self.render_mode is None:

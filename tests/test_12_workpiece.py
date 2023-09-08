@@ -3,7 +3,7 @@ from os import path
 
 dir=path.abspath(path.dirname(__file__) + './..')
 sys.path.append(dir)
-from epsim.core import Workpiece,WorldObj
+from epsim.core import Workpiece,WorldObj,SHARE
 from epsim.core.componets import OpLimitData
 from epsim.utils.onehost import type2onehot,op_ket2onehots
 def test_onehot():
@@ -30,14 +30,42 @@ def test_imgae():
     img=wp.image
     h,w,c=img.shape
     assert c==3
-    assert h==WorldObj.TILE_SIZE 
-    assert w==WorldObj.TILE_SIZE    
+    assert h==SHARE.TILE_SIZE 
+    assert w==SHARE.TILE_SIZE    
 
 def test_state():
     wp=Workpiece.make_new('A')
     op_start:OpLimitData=OpLimitData(0,'A',101)
     wp.target_op_limit=op_start
-    print(wp.state2data())
+    data=wp.state2data()
+    size=SHARE.OBJ_TYPE_SIZE+SHARE.OP_TYPE1_SIZE+SHARE.OP_TYPE2_SIZE+SHARE.PRODUCT_TYPE_SIZE+4
+    assert size==19
+    assert size==len(data)
+
+    start=0
+    d=data[start:SHARE.OBJ_TYPE_SIZE]
+    assert d.tolist()==[0.,0.,1.]
+    start+=SHARE.OBJ_TYPE_SIZE
+    d=data[start:start+SHARE.OP_TYPE1_SIZE]
+    assert d.tolist()==[1.,0.,0.]
+    start+=SHARE.OP_TYPE1_SIZE
+    d=data[start:start+SHARE.OP_TYPE2_SIZE]
+    assert d.tolist()==[1.,0.,0.,0.,0.,0.]
+    start+=SHARE.OP_TYPE2_SIZE
+    d=data[start:start+SHARE.PRODUCT_TYPE_SIZE]
+    assert d.tolist()==[1.,0.,0.]
+
+    start+=SHARE.PRODUCT_TYPE_SIZE
+    d=data[start:start+2]
+    assert d.tolist()==[0.,0.5]
+
+    start+=2
+    d=data[start:start+2]
+    assert d.tolist()==[0.,0.]
+
+
+
+
 
 
 if __name__ == "__main__":

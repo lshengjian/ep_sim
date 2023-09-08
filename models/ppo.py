@@ -3,11 +3,7 @@ import torch
 import torch.nn as nn
 import torch.nn.functional as F
 import torch.optim as optim
-#from PIL import Image
 
-from linformer import Linformer
-from epsim.utils import img2cnn
-from epsim.core.consts import *
 #Hyperparameters
 learning_rate = 2.5e-4
 gamma = 0.98
@@ -18,10 +14,6 @@ T_horizon = 800
 device = torch.device("cuda" if torch.cuda.is_available() else "cpu")
 
 
-def make_data(data):
-    img = data[:ROWS * CELL_SIZE, :CELL_SIZE * COLS, :]
-    return img2cnn(img, 224)
-
 
 class PPO(nn.Module):
 
@@ -30,13 +22,13 @@ class PPO(nn.Module):
         self.data = []
         self.net = nn.Sequential(
             nn.Flatten(),
-            nn.Linear(6*10, 128),
+            nn.Linear(5*19, 128),
             nn.ReLU(inplace=True),
             nn.Linear(128, 256),
             nn.ReLU(inplace=True),
             nn.Linear(256, 128),
             nn.ReLU(inplace=True))
-        self.fc_pi = nn.Linear(128, 3)
+        self.fc_pi = nn.Linear(128, 5)
         self.fc_v = nn.Linear(128, 1)
         self.optimizer = optim.Adam(self.parameters(), lr=learning_rate)
 

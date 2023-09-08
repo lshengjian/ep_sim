@@ -1,4 +1,4 @@
-#from ..core.componets import OperateData
+from ..core import SHARE
 from .world_object import WorldObj
 from .rendering import *
 from  functools  import lru_cache
@@ -30,7 +30,7 @@ def is_number(string):
 @lru_cache(4)
 def get_crane_shape(dir:int):  
     #print('make HeadCrane')
-    img=np.zeros((WorldObj.TILE_SIZE,WorldObj.TILE_SIZE,3),dtype=np.uint8)
+    img=np.zeros((SHARE.TILE_SIZE,SHARE.TILE_SIZE,3),dtype=np.uint8)
     if dir==0:
         return fill_coords(img,point_in_rect(0.3,0.7,0.4,0.6))
 
@@ -55,7 +55,7 @@ def get_workpiece_shape(prd_code:str='A'):  # facage method
     return make_workpiece(ord(prd_code[0])-61)
 def make_workpiece(num_side=3): 
     #print('make workpiece')
-    img=np.zeros((WorldObj.TILE_SIZE,WorldObj.TILE_SIZE,CHS),dtype=np.uint8)
+    img=np.zeros((SHARE.TILE_SIZE,SHARE.TILE_SIZE,CHS),dtype=np.uint8)
     fill_coords(img,point_in_rect(0,1,0,0.1))
     fill_coords(img,point_in_rect(0.48,0.52,0.1,0.6))
     fill_coords(img,point_in_polygon(0.5,0.62,0.3,num_side))
@@ -63,7 +63,7 @@ def make_workpiece(num_side=3):
 
 def make_buff():
     #print('make buff')
-    img=np.zeros((WorldObj.TILE_SIZE*2,WorldObj.TILE_SIZE,CHS),dtype=np.uint8)
+    img=np.zeros((SHARE.TILE_SIZE*2,SHARE.TILE_SIZE,CHS),dtype=np.uint8)
     fill_coords(img,point_in_rect(0.1,0.2,0.36,1))
     fill_coords(img,point_in_rect(0.8,0.9,0.36,1))
 
@@ -88,8 +88,8 @@ def make_tank():
 
 def get_progress_bar(p:int=100):
     p=np.clip(p,1,100)
-    n=int(WorldObj.TILE_SIZE*(100-p)/100)
-    img=np.ones((WorldObj.TILE_SIZE//4,n,CHS),dtype=np.uint8)*255
+    n=int(SHARE.TILE_SIZE*(100-p)/100)
+    img=np.ones((SHARE.TILE_SIZE//4,n,CHS),dtype=np.uint8)*255
     return img
 
 
