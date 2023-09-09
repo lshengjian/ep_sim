@@ -31,7 +31,7 @@ class Renderer:
         self.nrow=nrow
         self.ncol=ncol
         tile_size=SHARE.TILE_SIZE
-        self.window_size =  ncol*tile_size, tile_size*nrow*3
+        self.window_size =  ncol*tile_size, tile_size*(nrow*3+1)
         # print(nrow,ncol)
         # print(self.window_size)
 
@@ -60,31 +60,31 @@ class Renderer:
         self._draw_products(pygame)
         merges=[]
         crane_offsets={}#:Dict[int,Crane]
-        for crane in self.world.all_cranes:
-            cx=int(crane.x+0.5)
-            if  cx in self.world.pos_slots and crane.y>=1:
-                merges.append(cx)
-                crane_offsets[cx]=crane
+        for agv in self.world.all_cranes:
+            x=int(agv.x+0.5)
+            if  x in self.world.pos_slots and agv.y>=1:
+                merges.append(x)
+                crane_offsets[x]=agv
         for x,s in self.world.pos_slots.items():
             r=x//self.ncol
-            crane=x%self.ncol
+            c=x%self.ncol
             if x not in merges:
-                self._surface.blit(make_surface(s.image,pygame),(crane*SHARE.TILE_SIZE,SHARE.TILE_SIZE*(3*(r+1))))
+                self._surface.blit(make_surface(s.image,pygame),(c*SHARE.TILE_SIZE,SHARE.TILE_SIZE*(3*(r+1)+1)))
             else:
                 img2=deepcopy(s.image)
                 img2[:,:,:]=s.image
                 crane_img=crane_offsets[x].image
-                img2=blend_imgs(crane_img,img2,(0,(crane_offsets[x].y-1)*SHARE.TILE_SIZE))
-                self._surface.blit(make_surface(img2,pygame),(crane*SHARE.TILE_SIZE,SHARE.TILE_SIZE*(3*(r+1))))
+                img2=blend_imgs(crane_img,img2,(0,int(crane_offsets[x].y-1)*SHARE.TILE_SIZE))
+                self._surface.blit(make_surface(img2,pygame),(c*SHARE.TILE_SIZE,SHARE.TILE_SIZE*(3*(r+1)+1)))
             
                 
-        for crane in self.world.all_cranes:
-            x=int(crane.x+0.5)
+        for agv in self.world.all_cranes:
+            x=int(agv.x+0.5)
             if  x in merges: continue
             r=x//self.ncol
             c=x%self.ncol
-            img=make_surface(crane.image,pygame)
-            self._surface.blit(img,(c*SHARE.TILE_SIZE,(crane.y+3*r+2)*SHARE.TILE_SIZE))
+            img=make_surface(agv.image,pygame)
+            self._surface.blit(img,(c*SHARE.TILE_SIZE,(agv.y+3*(r+1))*SHARE.TILE_SIZE))
            
 
 

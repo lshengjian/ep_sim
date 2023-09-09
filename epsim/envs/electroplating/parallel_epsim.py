@@ -41,15 +41,16 @@ class parallel_env(ParallelEnv):
     def __init__(self, render_mode=None,args: "DictConfig"  = None):
         self.args=args
         self.args=args
-        self.world=World(args.config_directory,args.max_x)
+        self.world=World(args.config_directory)
         Renderer.LANG=args.language
         SHARE.TILE_SIZE=args.tile_size
         SHARE.CHECK_TIME1=args.alarm.warning
         SHARE.CHECK_TIME2=args.alarm.fatal
 
         ncols=args.screen_columns
+        max_x=max(list(self.world.pos_slots.keys()))
         
-        rows=int(args.max_x/ncols+0.5)+1
+        rows=int(max_x/ncols+0.5)+1
         self.renderer=Renderer(self.world,args.fps,rows,ncols)
         
         self.possible_agents = [crane.cfg.name for crane in self.world.all_cranes]
@@ -149,7 +150,7 @@ class parallel_env(ParallelEnv):
 
         for idx,agv in enumerate(self.world.all_cranes):
             observations[agv.cfg.name]=self.world.get_observation(idx)
-            infos[agv.cfg.name]=self.world.get_masks(agv)
+            infos[agv.cfg.name]={"action_masks":self.world.get_masks(agv)}
         self.state = observations
 
 

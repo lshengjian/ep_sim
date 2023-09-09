@@ -7,8 +7,10 @@ class MaskSelect(RandomSelect):
     def decision(self,obs:dict,infos:dict):
         actions={}
         for k,info in infos.items():
-            print(k,info)
+            #print(info)
             masks=info['action_masks']
-            acts=np.argwhere(masks).reshape(-1)
+            #print(k,masks.tolist())
+            
+            acts=np.argwhere(masks).ravel()
             actions[k]=random.choice(acts)
         return actions

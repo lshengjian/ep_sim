@@ -23,7 +23,8 @@ class Crane(WorldObj):
         return data  
          
     def __str__(self):
-        return super().__str__()+f' {self.cfg.name} {Directions[self.last_action]}'
+        old=super().__str__()
+        return f'{self.cfg.name} {Directions[self.last_action]} {old}'
 
     def reset(self):
         super().reset()

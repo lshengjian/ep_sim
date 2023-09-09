@@ -46,7 +46,7 @@ get_observations()
 4) 天车相撞 游戏结束
 '''
 class World:
-    def __init__(self,config_directory='demo', max_offset:int=32,
+    def __init__(self,config_directory='demo', 
             warning_time=3,fatal_time=10,isAutoPut=True):
         Slot.WarningTime=warning_time
         Slot.FatalTime=fatal_time
@@ -58,7 +58,7 @@ class World:
         self.score=0
         self.step_count=0
         self.ops_dict:Dict[int,OperateData]=None
-        self.max_x: int = max_offset
+        
         self.max_y: int = 2
         self.all_cranes:List[Crane] = []
         self.pos_slots:Dict[int,Slot] = {} #Start,End,Belt,Tank
@@ -211,13 +211,14 @@ class World:
             crane:Crane=Crane(cfg.offset,cfg)
             self.all_cranes.append(crane)
             self.group_cranes[cfg.group].append(crane)
+        self.max_x: int = max(list(self.pos_slots.keys()))
  
 
     def get_masks(self,crane:Crane):
         
         eps=1e-4
         wp:Workpiece=crane.carrying
-        if wp is None and crane.y+eps<2:
+        if wp is None and crane.last_action!=Actions.top and crane.y+eps<2: #天车空载，应该下行
             mask = np.zeros(5, dtype=np.int8)
             mask[Actions.bottom]=1
             return mask
@@ -225,22 +226,25 @@ class World:
         mask = np.ones(5, dtype=np.int8)
 
         x1,x2=self.group_limits[crane.cfg.group]
+        mask[Actions.left]=0
+        mask[Actions.right]=0
         
-        if wp != None:
-            mask[Actions.left]=0
-            mask[Actions.right]=0
-            for x in range(x1,x2+1):
-                if x in self.pos_slots:
-                    slot=self.pos_slots[x]
-                    wp2:Workpiece=slot.carrying
+        for x in range(x1,x2+1):
+            if x in self.pos_slots:
+                slot=self.pos_slots[x]
+                wp2:Workpiece=slot.carrying
+                if wp != None:
                     if wp2 is None and wp.target_op_limit.op_key==slot.cfg.op_key:
                         if slot.x<crane.x:
                             dir.add(-1)
                         elif slot.x>crane.x:
                             dir.add(1)
-                    
-            if -1 in dir:mask[Actions.left]=1
-            if 1 in dir:mask[Actions.right]=1
+                    if -1 in dir:mask[Actions.left]=1
+                    if 1 in dir:mask[Actions.right]=1
+                elif wp2!=None :
+                    if slot.x<crane.x:mask[Actions.left]=1
+                    elif slot.x>crane.x:mask[Actions.right]=1
+
 
         if crane.y<eps:
             mask[Actions.top]=0
