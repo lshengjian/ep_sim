@@ -1,16 +1,16 @@
 language: chinese  #english  or chinese
 config_directory: demo
 alarm:
-  warning: 8 #超出此时间后告警
-  fatal: 20  #超出此时间后失败
+  short_time: 8 #超出此时间后告警
+  long_time: 20  #超出此时间后失败
 
 products:
 - code: A
-  num: 3
+  num: 1
 - code: B
-  num: 3
+  num: 1
 
-max_x: 32  #加工槽逻辑上排成一排，最远的偏移是多少个单元格
+#max_x: 32  #加工槽逻辑上排成一排，最远的偏移是多少个单元格
 
 fps: 60
 tile_size: 48      # 绘图单位方格的像数值

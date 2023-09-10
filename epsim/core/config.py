@@ -6,7 +6,7 @@ from epsim.core.componets import *
 
 __all__=['split_field','build_config','get_files','get_file_info']
 import logging
-logging.basicConfig(filename='epsim.log',format='%(name)s - %(levelname)s - %(message)s', encoding='utf-8', level=logging.INFO)
+logging.basicConfig(filename='epsim.log',format='%(name)s - %(levelname)s - %(message)s', encoding='utf-8', level=logging.ERROR)
 #,format='%(asctime)s - %(levelname)s - %(message)s', encoding='utf-8', level=logging.DEBUG)
 logger = logging.getLogger(__name__)
 '''

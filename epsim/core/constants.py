@@ -19,8 +19,8 @@ class SHARE:
     MIN_AGENT_SAFE_DISTANCE:int=2
     TILE_SIZE:int=48
 
-    CHECK_TIME1:int=3
-    CHECK_TIME2:int=20
+    SHORT_ALARM_TIME:int=3
+    LONG_ALARM_TIME:int=20
 
     EPS:float=1e-4
 

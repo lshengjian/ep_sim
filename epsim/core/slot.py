@@ -64,13 +64,13 @@ class Slot(WorldObj):#缓存及加工位
         elif op.min_time<=self.timer<op.max_time:
             return wp,1
         r=0
-        if op.min_time-SHARE.CHECK_TIME1<self.timer<op.min_time :
+        if op.min_time-SHARE.SHORT_ALARM_TIME<self.timer<op.min_time :
             r=-1
-        elif self.timer<=op.min_time-SHARE.CHECK_TIME1:
+        elif self.timer<=op.min_time-SHARE.SHORT_ALARM_TIME:
             r=-3
-        if op.max_time<self.timer<op.max_time+SHARE.CHECK_TIME2:
+        if op.max_time<self.timer<op.max_time+SHARE.LONG_ALARM_TIME:
             r=-2
-        elif self.timer>=op.max_time+SHARE.CHECK_TIME2:
+        elif self.timer>=op.max_time+SHARE.LONG_ALARM_TIME:
             r=-5
         #print(f'tack out {wp}  from {self}')
         return wp,r    
@@ -102,9 +102,9 @@ class Slot(WorldObj):#缓存及加工位
                 p=int(self.timer/op_time*100+0.5)
                 pg_bar=get_progress_bar(p)
                 color=(0,255,0)
-                if self.timer+SHARE.CHECK_TIME1>=wp.target_op_limit.max_time:#max(op_time*0.1,5)
+                if self.timer+SHARE.SHORT_ALARM_TIME>=wp.target_op_limit.max_time:#max(op_time*0.1,5)
                     color=(255,0,0)
-                elif self.timer+SHARE.CHECK_TIME2>=wp.target_op_limit.max_time: #max(op_time*0.2,10)
+                elif self.timer+SHARE.LONG_ALARM_TIME>=wp.target_op_limit.max_time: #max(op_time*0.2,10)
                     color=(255,255,0)
                 pg_bar=set_color(pg_bar,*color)
                 img=blend_imgs(pg_bar,img,(int(SHARE.TILE_SIZE*0.06),SHARE.TILE_SIZE*2-pg_bar.shape[0]))

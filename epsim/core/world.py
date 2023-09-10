@@ -421,7 +421,7 @@ class World:
             if s.cfg.op_key<SHARE.MIN_OP_KEY or s.carrying is None:
                 continue
             op:OpLimitData=s.carrying.target_op_limit
-            if s.timer>op.max_time+SHARE.CHECK_TIME2:
+            if s.timer>op.max_time+SHARE.LONG_ALARM_TIME:
                 self.is_over=True
                 logger.error(f'{s} op timeout!')
                 break  

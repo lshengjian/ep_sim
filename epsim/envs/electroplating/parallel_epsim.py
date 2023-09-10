@@ -45,8 +45,8 @@ class parallel_env(ParallelEnv):
         self.world=World(args.config_directory)
         Renderer.LANG=args.language
         SHARE.TILE_SIZE=args.tile_size
-        SHARE.CHECK_TIME1=args.alarm.warning
-        SHARE.CHECK_TIME2=args.alarm.fatal
+        SHARE.SHORT_ALARM_TIME=args.alarm.short_time
+        SHARE.LONG_ALARM_TIME=args.alarm.long_time
 
         ncols=args.screen_columns
         max_x=max(list(self.world.pos_slots.keys()))

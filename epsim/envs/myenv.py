@@ -54,8 +54,8 @@ class MyEnv(Env):
         self.world=World(args.config_directory,args.max_x)
         Renderer.LANG=args.language
         SHARE.TILE_SIZE=args.tile_size
-        SHARE.CHECK_TIME1=args.alarm.warning
-        SHARE.CHECK_TIME2=args.alarm.fatal
+        SHARE.SHORT_ALARM_TIME=args.alarm.warning
+        SHARE.LONG_ALARM_TIME=args.alarm.fatal
 
         ncols=args.screen_columns
         
