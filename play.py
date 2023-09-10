@@ -1,4 +1,4 @@
-from epsim.envs import parallel_env
+from epsim.envs.electroplating_v1 import parallel_env
 from polices import RandomSelect,MaskSelect
 import numpy as np
 import hydra
@@ -13,7 +13,7 @@ def main(cfg: "DictConfig"):  # noqa: F821
       observations, rewards, terminateds, truncateds, infos = env.step(actions)
       dones=list(terminateds.values())
       if np.any(dones):
-         print('RESET',dones)
+         print('RESET')
          observations, infos = env.reset()
    # img = Image.fromarray(observation)
    # img.save("state.jpg")

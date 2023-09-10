@@ -1,79 +1,81 @@
+from __future__ import annotations
+#from .parallel_epsim import parallel_env
+from epsim.core import *
+#from epsim.utils import save_img
+import hydra
 import pygame
 
-
-class ManualPolicy:
-    def __init__(self, env, agent_id: int = 0, show_obs: bool = False):
-
+class ManualControl:
+    def __init__(
+        self,
+        env
+    ) -> None:
         self.env = env
-        self.agent_id = agent_id
-        self.agent = self.env.agents[self.agent_id]
+        self.running = True
+        #self.cur_crane_idx=0
+        self.info={'action_mask':[1]*5}
 
-        # TO-DO: show current agent observation if this is True
-        self.show_obs = show_obs
+    def start(self):
+        self.reset()
+        
+        while self.running:
+            for event in pygame.event.get():
+                if event.type == pygame.QUIT:
+                    self.running = False
+                elif event.type == pygame.KEYDOWN:
+                    key=pygame.key.name(event.key)
+                    self.key_handler(key)
+                    self.env.render()
+        pygame.quit()
 
-        # action mappings for all agents are the same
-        if True:
-            self.default_action = 5
-            self.action_mapping = dict()
-            self.action_mapping[pygame.K_w] = 0  # front
-            self.action_mapping[pygame.K_s] = 1  # back
-            self.action_mapping[pygame.K_a] = 2  # rotate left
-            self.action_mapping[pygame.K_d] = 3  # rotate right
-            self.action_mapping[pygame.K_SPACE] = 4  # weapon
-
-    def __call__(self, observation, agent):
-        # only trigger when we are the correct agent
-        assert (
-            agent == self.agent
-        ), f"Manual Policy only applied to agent: {self.agent}, but got tag for {agent}."
-
-        # set the default action
-        action = self.default_action
-
-        # if we get a key, override action using the dict
-        for event in pygame.event.get():
-            if event.type == pygame.KEYDOWN:
-                if event.key == pygame.K_ESCAPE:
-                    # escape to end
-                    exit()
-
-                elif event.key == pygame.K_BACKSPACE:
-                    # backspace to reset
-                    self.env.reset()
-
-                elif event.key in self.action_mapping:
-                    action = self.action_mapping[event.key]
-
-        return action
-
-    @property
-    def available_agents(self):
-        return self.env.agent_name_mapping
+    def reset(self):
+        _, self.infos = self.env.reset(seed=123)
+    def step(self, actions):
+        obs, rewards, terminateds, truncateds,self.infos = self.env.step(actions)
+        dones=list(terminateds.values())
+        if dones[0]:
+            print("game over!")
+            self.reset()
 
 
-if __name__ == "__main__":
-    from pettingzoo.butterfly import knights_archers_zombies_v10
 
-    clock = pygame.time.Clock()
+        
 
-    env = knights_archers_zombies_v10.env()
-    env.reset()
+    def key_handler(self,key):
+        #print(key)
+        if key == "escape":
+            self.env.close()
+            self.running=False
+            return
+        if key == "backspace":
+            self.reset()
+            return
+        if key == "q":
+            self.env.world._next_product()
+            return
+        if key == "tab":
+            #print('next_crane')
+            self.env.next_crane()
+            return
+        # if key == "space":
+        #     self.env.world.put_product()
+        #     self.env.render()
+        #     return
 
-    manual_policy = knights_archers_zombies_v10.ManualPolicy(env)
-
-    for agent in env.agent_iter():
-        clock.tick(env.metadata["render_fps"])
-
-        observation, reward, termination, truncation, info = env.last()
-
-        if agent == manual_policy.agent:
-            action = manual_policy(observation, agent)
+        key_to_action = {
+            "left": Actions.left,
+            "right": Actions.right,
+            "down": Actions.bottom , 
+            "up": Actions.top,
+        }
+        actions={}#np.zeros(len(self.env.world.all_cranes),dtype=np.uint8)
+        for carne in self.env.world.all_cranes:
+            actions[carne.cfg.name]=Actions.stay
+        if key in key_to_action.keys():
+            action = key_to_action[key]
+            carne=self.env.world.cur_crane
+            #if  self.infos[carne.cfg.name]['action_masks'][action]:
+            actions[carne.cfg.name]=action
+            self.step(actions)
         else:
-            action = env.action_space(agent).sample()
-
-        env.step(action)
-
-        env.render()
-
-        if termination or truncation:
-            env.reset()
+            self.step(actions)

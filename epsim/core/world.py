@@ -1,5 +1,5 @@
 from __future__ import annotations
-import logging
+
 import math
 from typing import  List,Dict
 from collections import defaultdict
@@ -12,7 +12,7 @@ from .slot import Slot
 from .workpiece import Workpiece
 from .config import build_config
 
-
+import logging
 logger = logging.getLogger(__name__)
 '''
 外部接口
@@ -46,14 +46,14 @@ get_observations()
 4) 天车相撞 游戏结束
 '''
 class World:
-    def __init__(self,config_directory='demo', 
-            warning_time=3,fatal_time=10,isAutoPut=True):
+    def __init__(self,config_directory='demo', isAutoPut=True):
         # Slot.WarningTime=warning_time
         # Slot.FatalTime=fatal_time
         
         self.config_directory=config_directory
         self.enableAutoPut=isAutoPut
         self.is_over=False
+        self.todo_cnt=0
         self.reward=0
         self.score=0
         self.step_count=0
@@ -80,6 +80,7 @@ class World:
 
     def add_jobs(self,ps:List[str]=[]):
         self.products.extend(ps)
+        self.todo_cnt+=len(ps)
         if self.enableAutoPut:self.products2starts()
 
     def next_crane(self):
@@ -108,6 +109,8 @@ class World:
         self._check_cranes()
         self._check_slots()
         self.score+=self.reward
+        if self.todo_cnt<1:
+            self.is_over=True
     
     def get_state(self): #仿真系统的全部状态数据
         rt=[]
@@ -139,6 +142,7 @@ class World:
     def reset(self):
         #self.load_config()
         self.is_over=False
+        self.todo_cnt=0
         self.cur_crane_index=0
         self.prd_idx=0
         self.cur_prd_code=None
@@ -149,6 +153,7 @@ class World:
             crane.reset()
         for slot in  self.pos_slots.values():
             slot.reset()
+        Workpiece.UID.clear()
         
         
     def get_group_bound(self,group=1):
@@ -162,6 +167,7 @@ class World:
             if not s.locked:
                 if len(ps)>0:
                     wp:Workpiece=Workpiece.make_new(ps[0],s.x)
+                    #print('products2starts')
                     self.plan_next(wp)
                     s.put_in(wp)
                     ps.remove(ps[0])
@@ -215,19 +221,20 @@ class World:
  
     def _limit_only_top(self,crane:Crane,masks:np.ndarray)->bool:
         rt=False
-        if 0<crane.y<SHARE.MAX_Y and crane.last_action==Actions.top:
+        if 0<crane.y<SHARE.MAX_Y and crane.carrying!=None:
             masks[Actions.top]=1
             rt=True
         return rt
 
     def _limit_only_bottom(self,crane:Crane,masks:np.ndarray)->bool:
         rt=False
-        if 0<crane.y<SHARE.MAX_Y and crane.last_action==Actions.bottom:
+        if 0<crane.y<SHARE.MAX_Y and crane.carrying is None:
             masks[Actions.bottom]=1
             rt=True
         return rt
     
     def _limit_allow_move(self,crane:Crane,masks:np.ndarray):
+        eps=SHARE.EPS
         x1,x2=self.group_limits[crane.cfg.group]
         wp:Workpiece=crane.carrying
         dir=set()
@@ -246,8 +253,9 @@ class World:
                         #masks[Actions.left]=1
                     elif slot.x>crane.x:
                         dir.add(Actions.right)
+                        #print('add right')
                         #masks[Actions.right]=1
-                    else :
+                    elif  crane.y<eps:
                         masks[Actions.bottom]=1
                         return
             elif wp2!=None : #天车空闲，加工槽载物
@@ -266,7 +274,37 @@ class World:
             masks[Actions.left]=1
         if Actions.right in dir:
             masks[Actions.right]=1
+            #print('add right')
 
+
+    def _limit_disable(self,crane:Crane,masks:np.ndarray):
+        eps=SHARE.EPS
+        x1,x2=self.group_limits[crane.cfg.group]
+        if crane.y<eps:
+            masks[Actions.top]=0
+        elif crane.y>(self.max_y-eps):
+            masks[Actions.bottom]=0
+        if eps<crane.y<(self.max_y-eps):
+            masks[Actions.left]=0
+            masks[Actions.right]=0
+        
+        
+        if crane.x-eps<x1:
+            #print('close left side')
+            masks[Actions.left]=0
+        elif crane.x+eps>x2:
+            #print('close right side')
+            masks[Actions.right]=0
+            
+
+        
+        for agv in self.all_cranes:
+            if agv==crane or agv.cfg.group!=crane.cfg.group:
+                continue
+            if agv.x>crane.x and (agv.x-crane.x)<=SHARE.MIN_AGENT_SAFE_DISTANCE:
+                masks[Actions.right]=0
+            if agv.x<crane.x and (crane.x-agv.x)<=SHARE.MIN_AGENT_SAFE_DISTANCE:
+                masks[Actions.left]=0
 
 
     def get_masks(self,crane:Crane):
@@ -277,50 +315,10 @@ class World:
         if self._limit_only_bottom(crane,masks):
             return masks
         self._limit_allow_move(crane,masks)
-        #print(masks.tolist())
+        self._limit_disable(crane,masks)
         return masks
 
-        
-        # mask = np.ones(5, dtype=np.int8)
 
-
-
-        # if crane.y<eps:
-        #     mask[Actions.top]=0
-        # elif crane.y>(self.max_y-eps):
-        #     mask[Actions.bottom]=0
-        # if eps<crane.y<(self.max_y-eps):
-        #     mask[Actions.left]=0
-        #     mask[Actions.right]=0
-        
-        
-        # if crane.x-eps<x1:
-        #     mask[Actions.left]=0
-        # elif crane.x+eps>x2:
-        #     mask[Actions.right]=0
-
-        
-        # if wp!=None and abs(wp.y-1)<eps:
-        #     mask[Actions.bottom]=0
-        # if wp!=None and abs(wp.y)<eps:
-        #     x=self._round(wp.x)
-        #     if x not in self.pos_slots:
-        #         mask[Actions.bottom]=0
-        #     else:
-        #         slot=self.pos_slots[x]
-        #         wp2:Workpiece=slot.carrying
-        #         if wp2!=None or wp.target_op_limit.op_key!=slot.cfg.op_key:
-        #             mask[Actions.bottom]=0
-        
-        # for agv in self.all_cranes:
-        #     if agv==crane:continue
-        #     if agv.x>crane.x and (agv.x-crane.x)<=SHARE.MIN_AGENT_SAFE_DISTANCE:
-        #         mask[Actions.right]=0
-        #     if agv.x<crane.x and (crane.x-agv.x)<=SHARE.MIN_AGENT_SAFE_DISTANCE:
-        #         mask[Actions.left]=0
-
-
-        return mask
     
 
     def plan_next(self,wp:Workpiece):
@@ -358,12 +356,11 @@ class World:
 
         wp,reward=source.take_out()
         self.reward+=reward
-        if source in self.starts:
-            if self.enableAutoPut:
-                self.products2starts()
+
         if type(target) is Slot: 
             if target in self.ends:
                 self.reward+=10
+                self.todo_cnt-=1
                 del wp
                 return 
             if target.cfg.op_key==SHARE.SWAP_KEY:
@@ -377,6 +374,8 @@ class World:
         target.put_in(wp)
         if type(target) is Crane:
             self.plan_next(wp)
+        if source in self.starts and self.enableAutoPut:
+            self.products2starts()
          
         
 

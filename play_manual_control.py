@@ -1,9 +1,17 @@
-from __future__ import annotations
-from epsim.envs.myenv import MyEnv
-from epsim.core import *
-from epsim.utils import save_img
+
+from epsim.envs.electroplating_v1 import parallel_env,ManualControl
+
 import hydra
-import pygame
+@hydra.main(config_path="./config", config_name="args", version_base="1.3")
+def main(args: "DictConfig"):  # noqa: F821
+    env=parallel_env("human",args)
+    manual_control = ManualControl(env)
+    manual_control.start()
+
+if __name__ == "__main__":
+    main()
+
+'''
 
 class ManualControl:
     def __init__(
@@ -12,17 +20,12 @@ class ManualControl:
     ) -> None:
         self.env = env
         self.running = True
+        #self.cur_crane_idx=0
         self.info={'action_mask':[1]*5}
 
     def start(self):
-        # pygame.init()
-        # pygame.display.init()
-        # pygame.display.set_caption('test')
-        #         #self.font  =  pygame.font.Font(None,26)
-        # window=pygame.display.set_mode((400,200))# ,pygame.DOUBLEBUF, 32)
-        # clock = pygame.time.Clock()
-
-
+        self.reset()
+        
         while self.running:
             for event in pygame.event.get():
                 if event.type == pygame.QUIT:
@@ -31,26 +34,17 @@ class ManualControl:
                     key=pygame.key.name(event.key)
                     self.key_handler(key)
                     self.env.render()
-
-                    
-
-            # window.fill((0, 0, 0))
-            # pygame.draw.circle(window, (255,0,0), (100, 100), 60)
-            # pygame.display.flip()
-            # clock.tick(60)
         pygame.quit()
 
-
-    def step(self, action: Actions):
-        obs, reward, terminated, truncated,self.info = self.env.step(action)
-        #print(obs)
-        #save_img(img,'outputs/'+self.env.world.cur_crane.cfg.name+'.jpg')
-        if terminated:
+    def reset(self):
+        _, self.infos = self.env.reset(seed=123)
+    def step(self, actions):
+        obs, rewards, terminateds, truncateds,self.infos = self.env.step(actions)
+        dones=list(terminateds.values())
+        if dones[0]:
             print("game over!")
-            self.env.reset()
-        elif truncated:
-            print("truncated!")
-            self.env.reset()
+            self.reset()
+
 
 
         
@@ -62,7 +56,7 @@ class ManualControl:
             self.running=False
             return
         if key == "backspace":
-            self.env.reset()
+            self.reset()
             return
         if key == "q":
             self.env.world._next_product()
@@ -81,21 +75,15 @@ class ManualControl:
             "down": Actions.bottom , 
             "up": Actions.top,
         }
+        actions={}#np.zeros(len(self.env.world.all_cranes),dtype=np.uint8)
+        for carne in self.env.world.all_cranes:
+            actions[carne.cfg.name]=Actions.stay
         if key in key_to_action.keys():
             action = key_to_action[key]
-            if self.info['action_masks'][action]:
-                self.step(action)
+            carne=self.env.world.cur_crane
+            if  self.infos[carne.cfg.name]['action_masks'][action]:
+                actions[carne.cfg.name]=action
+            self.step(actions)
         else:
-            self.step(Actions.stay)
-
-@hydra.main(config_path="./config", config_name="args", version_base="1.3")
-def main(args: "DictConfig"):  # noqa: F821
-    env=MyEnv("human",args)
-    env.reset(seed=123)
-
-    manual_control = ManualControl(env)
-    manual_control.start()
-
-if __name__ == "__main__":
-    main()
-
+            self.step(actions)
+'''

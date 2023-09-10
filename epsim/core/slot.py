@@ -5,6 +5,10 @@ from .workpiece import Workpiece
 from .shapes import get_slot_shape,get_progress_bar
 from .rendering import set_color,blend_imgs
 from .workpiece import Workpiece
+
+import logging
+logger = logging.getLogger(__name__)
+
 class Slot(WorldObj):#缓存及加工位
 
     def __init__(self, x:int,cfg:SlotData ):#,ops_dict: Dict[int,OperateData]
@@ -39,9 +43,12 @@ class Slot(WorldObj):#缓存及加工位
         if wp is None:
             return
         self.timer=0
+        #print(f'put {wp} to {self}')
+        logger.info(f'put {wp} to {self}')
         wp.attached=self
         self.carrying=wp
         self.locked=True
+        
 
     
     def take_out(self)->Tuple:
@@ -65,6 +72,7 @@ class Slot(WorldObj):#缓存及加工位
             r=-2
         elif self.timer>=op.max_time+SHARE.CHECK_TIME2:
             r=-5
+        #print(f'tack out {wp}  from {self}')
         return wp,r    
 
 

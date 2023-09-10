@@ -9,7 +9,8 @@ from ..render.renderer import Renderer
 from epsim.core import World,WorldObj,Slot,Crane,Actions,SHARE
 from epsim.core.componets import Color
 from epsim.core import SHARE
-
+import logging
+logger = logging.getLogger(__name__)
 def env(render_mode=None):
     """
     The env function often wraps the environment in wrappers by default.
@@ -74,6 +75,12 @@ class parallel_env(ParallelEnv):
     @functools.lru_cache(maxsize=None)
     def action_space(self, agent):
         return Discrete(5)
+    
+    def next_crane(self):
+        for c in self.world.all_cranes:
+            c.color=Color(255,255,255)
+        self.world.next_crane()
+        self.world.cur_crane.color=Color(255,0,0)
 
     def render(self):
         if self.render_mode is None:
@@ -113,6 +120,8 @@ class parallel_env(ParallelEnv):
         for agv in self.world.all_cranes:
             agv.color=Color(255,255,255)
         self.world.cur_crane.color=Color(255,0,0)
+        if self.render_mode == "human":
+            self.render()
         return observations, infos
 
     def step(self, actions:dict):
@@ -151,6 +160,9 @@ class parallel_env(ParallelEnv):
         for idx,agv in enumerate(self.world.all_cranes):
             observations[agv.cfg.name]=self.world.get_observation(idx)
             infos[agv.cfg.name]={"action_masks":self.world.get_masks(agv)}
+            if idx==0 and agv.last_action!=0:
+                #print(agv)
+                logger.debug(agv)
         self.state = observations
 
 
