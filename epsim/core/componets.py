@@ -81,6 +81,6 @@ class OpLimitData(Index):
    op_name:str=''
    @property
    def duration(self):
-       return self.max_time-self.min_time
+       return (self.max_time+self.min_time)//2
    def __str__(self) -> str:
         return f'[{self.product_code}] {self.op_name} {self.min_time}->{self.max_time}'

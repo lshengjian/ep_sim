@@ -213,72 +213,93 @@ class World:
             self.group_cranes[cfg.group].append(crane)
         self.max_x: int = max(list(self.pos_slots.keys()))
  
+    def _limit_only_top(self,crane:Crane,masks:np.ndarray)->bool:
+        rt=False
+        if 0<crane.y<SHARE.MAX_Y and crane.last_action==Actions.top:
+            masks[Actions.top]=1
+            rt=True
+        return rt
+
+    def _limit_only_bottom(self,crane:Crane,masks:np.ndarray)->bool:
+        rt=False
+        if 0<crane.y<SHARE.MAX_Y and crane.last_action==Actions.bottom:
+            masks[Actions.bottom]=1
+            rt=True
+        return rt
+    def _limit_allow_move(self,crane:Crane,masks:np.ndarray):
+        x1,x2=self.group_limits[crane.cfg.group]
+        wp:Workpiece=crane.carrying
+        dir=set()
+        for x in range(x1,x2+1):
+            if x not in self.pos_slots: continue
+            slot=self.pos_slots[x]
+            wp2:Workpiece=slot.carrying
+            if wp != None:
+                if wp2 is None and wp.target_op_limit.op_key==slot.cfg.op_key: #天车载物，加工槽空闲
+                    if slot.x<crane.x:
+                        dir.add(-1)
+                    elif slot.x>crane.x:
+                        dir.add(1)
+                    elif abs(crane.y)<=SHARE.EPS:
+                        masks[Actions.bottom]=1
+                        return
+            elif wp2!=None : #天车空闲，加工槽载物
+                if slot.timer>=wp2.target_op_limit.duration-5: #todo
+                    if slot.x<crane.x:masks[Actions.left]=1
+                    elif slot.x>crane.x:masks[Actions.right]=1
+                if abs(crane.y-SHARE.MAX_Y)<=SHARE.EPS and slot.timer>=wp2.target_op_limit.duration-1:
+                    masks[Actions.top]=1
+                    return
+        if -1 in dir:masks[Actions.left]=1
+        if 1 in dir:masks[Actions.right]=1
+
 
     def get_masks(self,crane:Crane):
-        
-        eps=1e-4
-        wp:Workpiece=crane.carrying
-        if wp is None and crane.last_action!=Actions.top and crane.y+eps<2: #天车空载，应该下行
-            mask = np.zeros(5, dtype=np.int8)
-            mask[Actions.bottom]=1
-            return mask
-        dir=set()
-        mask = np.ones(5, dtype=np.int8)
-
-        x1,x2=self.group_limits[crane.cfg.group]
-        mask[Actions.left]=0
-        mask[Actions.right]=0
-        
-        for x in range(x1,x2+1):
-            if x in self.pos_slots:
-                slot=self.pos_slots[x]
-                wp2:Workpiece=slot.carrying
-                if wp != None:
-                    if wp2 is None and wp.target_op_limit.op_key==slot.cfg.op_key:
-                        if slot.x<crane.x:
-                            dir.add(-1)
-                        elif slot.x>crane.x:
-                            dir.add(1)
-                    if -1 in dir:mask[Actions.left]=1
-                    if 1 in dir:mask[Actions.right]=1
-                elif wp2!=None :
-                    if slot.x<crane.x:mask[Actions.left]=1
-                    elif slot.x>crane.x:mask[Actions.right]=1
-
-
-        if crane.y<eps:
-            mask[Actions.top]=0
-        elif crane.y>(self.max_y-eps):
-            mask[Actions.bottom]=0
-        if eps<crane.y<(self.max_y-eps):
-            mask[Actions.left]=0
-            mask[Actions.right]=0
-        
-        
-        if crane.x-eps<x1:
-            mask[Actions.left]=0
-        elif crane.x+eps>x2:
-            mask[Actions.right]=0
+        masks = np.zeros(5, dtype=np.int8)
+        masks[Actions.stay]=1
+        if self._limit_only_top(crane,masks):return masks
+        if self._limit_only_bottom(crane,masks):return masks
+        self._limit_allow_move(crane,masks)
+        return masks
 
         
-        if wp!=None and abs(wp.y-1)<eps:
-            mask[Actions.bottom]=0
-        if wp!=None and abs(wp.y)<eps:
-            x=self._round(wp.x)
-            if x not in self.pos_slots:
-                mask[Actions.bottom]=0
-            else:
-                slot=self.pos_slots[x]
-                wp2:Workpiece=slot.carrying
-                if wp2!=None or wp.target_op_limit.op_key!=slot.cfg.op_key:
-                    mask[Actions.bottom]=0
+        # mask = np.ones(5, dtype=np.int8)
+
+
+
+        # if crane.y<eps:
+        #     mask[Actions.top]=0
+        # elif crane.y>(self.max_y-eps):
+        #     mask[Actions.bottom]=0
+        # if eps<crane.y<(self.max_y-eps):
+        #     mask[Actions.left]=0
+        #     mask[Actions.right]=0
         
-        for agv in self.all_cranes:
-            if agv==crane:continue
-            if agv.x>crane.x and (agv.x-crane.x)<=SHARE.MIN_AGENT_SAFE_DISTANCE:
-                mask[Actions.right]=0
-            if agv.x<crane.x and (crane.x-agv.x)<=SHARE.MIN_AGENT_SAFE_DISTANCE:
-                mask[Actions.left]=0
+        
+        # if crane.x-eps<x1:
+        #     mask[Actions.left]=0
+        # elif crane.x+eps>x2:
+        #     mask[Actions.right]=0
+
+        
+        # if wp!=None and abs(wp.y-1)<eps:
+        #     mask[Actions.bottom]=0
+        # if wp!=None and abs(wp.y)<eps:
+        #     x=self._round(wp.x)
+        #     if x not in self.pos_slots:
+        #         mask[Actions.bottom]=0
+        #     else:
+        #         slot=self.pos_slots[x]
+        #         wp2:Workpiece=slot.carrying
+        #         if wp2!=None or wp.target_op_limit.op_key!=slot.cfg.op_key:
+        #             mask[Actions.bottom]=0
+        
+        # for agv in self.all_cranes:
+        #     if agv==crane:continue
+        #     if agv.x>crane.x and (agv.x-crane.x)<=SHARE.MIN_AGENT_SAFE_DISTANCE:
+        #         mask[Actions.right]=0
+        #     if agv.x<crane.x and (crane.x-agv.x)<=SHARE.MIN_AGENT_SAFE_DISTANCE:
+        #         mask[Actions.left]=0
 
 
         return mask

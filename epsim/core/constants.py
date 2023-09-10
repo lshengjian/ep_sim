@@ -22,6 +22,8 @@ class SHARE:
     CHECK_TIME1:int=3
     CHECK_TIME2:int=20
 
+    EPS:float=1e-4
+
 
 WINDOW_TITLE={
     'chinese':'电镀仿真器 | 换天车(tab),换产品(q),移动(→,↑,←,↓)',
