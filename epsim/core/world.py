@@ -48,8 +48,8 @@ get_observations()
 class World:
     def __init__(self,config_directory='demo', 
             warning_time=3,fatal_time=10,isAutoPut=True):
-        Slot.WarningTime=warning_time
-        Slot.FatalTime=fatal_time
+        # Slot.WarningTime=warning_time
+        # Slot.FatalTime=fatal_time
         
         self.config_directory=config_directory
         self.enableAutoPut=isAutoPut
@@ -226,40 +226,58 @@ class World:
             masks[Actions.bottom]=1
             rt=True
         return rt
+    
     def _limit_allow_move(self,crane:Crane,masks:np.ndarray):
         x1,x2=self.group_limits[crane.cfg.group]
         wp:Workpiece=crane.carrying
         dir=set()
         for x in range(x1,x2+1):
-            if x not in self.pos_slots: continue
+            if x not in self.pos_slots: 
+                continue
             slot=self.pos_slots[x]
+            if wp != None and wp.target_op_limit.op_key!=slot.cfg.op_key:
+                continue
+           
             wp2:Workpiece=slot.carrying
             if wp != None:
-                if wp2 is None and wp.target_op_limit.op_key==slot.cfg.op_key: #天车载物，加工槽空闲
+                if wp2 is None  : #天车载物，加工槽空闲
                     if slot.x<crane.x:
-                        dir.add(-1)
+                        dir.add(Actions.left)
+                        #masks[Actions.left]=1
                     elif slot.x>crane.x:
-                        dir.add(1)
-                    elif abs(crane.y)<=SHARE.EPS:
+                        dir.add(Actions.right)
+                        #masks[Actions.right]=1
+                    else :
                         masks[Actions.bottom]=1
                         return
             elif wp2!=None : #天车空闲，加工槽载物
-                if slot.timer>=wp2.target_op_limit.duration-5: #todo
-                    if slot.x<crane.x:masks[Actions.left]=1
-                    elif slot.x>crane.x:masks[Actions.right]=1
-                if abs(crane.y-SHARE.MAX_Y)<=SHARE.EPS and slot.timer>=wp2.target_op_limit.duration-1:
+                if abs(crane.y-SHARE.MAX_Y)<=SHARE.EPS and abs(slot.x-crane.x)<SHARE.EPS and slot.timer>=wp2.target_op_limit.duration-3  :
                     masks[Actions.top]=1
                     return
-        if -1 in dir:masks[Actions.left]=1
-        if 1 in dir:masks[Actions.right]=1
+                if slot.timer>=wp2.target_op_limit.duration-10: #todo
+                    if slot.x<crane.x:
+                        dir.add(Actions.left)
+                        #print("left")
+                    elif slot.x>crane.x:
+                        dir.add(Actions.right)
+                        #print("right")
+        #print(dir)
+        if Actions.left in dir:
+            masks[Actions.left]=1
+        if Actions.right in dir:
+            masks[Actions.right]=1
+
 
 
     def get_masks(self,crane:Crane):
         masks = np.zeros(5, dtype=np.int8)
         masks[Actions.stay]=1
-        if self._limit_only_top(crane,masks):return masks
-        if self._limit_only_bottom(crane,masks):return masks
+        if self._limit_only_top(crane,masks):
+            return masks
+        if self._limit_only_bottom(crane,masks):
+            return masks
         self._limit_allow_move(crane,masks)
+        #print(masks.tolist())
         return masks
 
         
@@ -404,7 +422,7 @@ class World:
             if s.cfg.op_key<SHARE.MIN_OP_KEY or s.carrying is None:
                 continue
             op:OpLimitData=s.carrying.target_op_limit
-            if s.timer>op.max_time+Slot.FatalTime:
+            if s.timer>op.max_time+SHARE.CHECK_TIME2:
                 self.is_over=True
                 logger.error(f'{s} op timeout!')
                 break  
