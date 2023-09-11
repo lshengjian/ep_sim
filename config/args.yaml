@@ -1,14 +1,17 @@
 language: chinese  #english  or chinese
+auto_dispatch: true
+observation_image: false
 config_directory: demo
+
 alarm:
   short_time: 8 #超出此时间后告警
   long_time: 20  #超出此时间后失败
 
 products:
 - code: A
-  num: 1
+  num: 3
 - code: B
-  num: 1
+  num: 2
 
 #max_x: 32  #加工槽逻辑上排成一排，最远的偏移是多少个单元格
 

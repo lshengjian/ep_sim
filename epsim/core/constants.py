@@ -23,6 +23,9 @@ class SHARE:
     LONG_ALARM_TIME:int=20
 
     EPS:float=1e-4
+    AUTO_DISPATCH:bool=False
+    OBSERVATION_IMAGE:bool=False
+
 
 
 WINDOW_TITLE={

@@ -46,12 +46,12 @@ get_observations()
 4) 天车相撞 游戏结束
 '''
 class World:
-    def __init__(self,config_directory='demo', isAutoPut=True):
+    def __init__(self,config_directory='demo'):
         # Slot.WarningTime=warning_time
         # Slot.FatalTime=fatal_time
         
         self.config_directory=config_directory
-        self.enableAutoPut=isAutoPut
+        self.enableAutoPut=SHARE.AUTO_DISPATCH
         self.is_over=False
         self.todo_cnt=0
         self.reward=0
@@ -84,8 +84,39 @@ class World:
         if self.enableAutoPut:self.products2starts()
 
     def next_crane(self):
+        for c in self.all_cranes:
+            c.color=Color(255,255,255)
         self.cur_crane_index=(self.cur_crane_index+1)%len(self.all_cranes)
+        self.cur_crane.color=Color(255,0,0)
+        
+    def put_product(self):
+        if self.cur_prd_code is None:
+            return
+        wp=Workpiece.make_new(self.cur_prd_code)
+        self.plan_next(wp)
+        start=self.get_free_slot(1,wp)
+        if start is None:
+            return
+        start.put_in(wp)
 
+    def shift_product(self):
+        cur_prd_code=None if len(self.products)<1 else self.products[0]
+        
+        if cur_prd_code is None:
+            self.cur_prd_code=None
+            return 
+        buff1=[]
+        buff2=[]
+        
+        for p in self.products:
+            if p==cur_prd_code:
+                buff1.append(p)
+            else:
+                buff2.append(p)
+        buff2.extend(buff1) 
+        self.products=buff2
+        self.cur_prd_code=buff2[0]
+        
     def set_command(self,action:Actions):
         crane=self.all_cranes[self.cur_crane_index]
         crane.set_command(action)
@@ -448,33 +479,6 @@ class World:
     
     def _round(self,x:float)->int:
         return int(x+0.5)
-    def _put_product(self):
-        if self.cur_prd_code is None:
-            return
-        wp=Workpiece.make_new(self.cur_prd_code)
-        self.plan_next(wp)
-        start=self.get_free_slot(1,wp)
-        if start is None:
-            return
-        start.put_in(wp)
-
-    def _next_product(self):
-        cur_prd_code=None if len(self.products)<1 else self.products[0]
-        
-        if cur_prd_code is None:
-            self.cur_prd_code=None
-            return 
-        buff1=[]
-        buff2=[]
-        
-        for p in self.products:
-            if p==cur_prd_code:
-                buff1.append(p)
-            else:
-                buff2.append(p)
-        buff2.extend(buff1) 
-        self.products=buff2
-        self.cur_prd_code=buff2[0]
 
         
 

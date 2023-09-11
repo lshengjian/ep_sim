@@ -1,5 +1,5 @@
 import functools
-
+import numpy as np
 import gymnasium
 from gymnasium.spaces import Discrete,Box
 
@@ -41,12 +41,14 @@ class parallel_env(ParallelEnv):
 
     def __init__(self, render_mode=None,args: "DictConfig"  = None):
         self.args=args
-        self.args=args
-        self.world=World(args.config_directory)
         Renderer.LANG=args.language
         SHARE.TILE_SIZE=args.tile_size
         SHARE.SHORT_ALARM_TIME=args.alarm.short_time
         SHARE.LONG_ALARM_TIME=args.alarm.long_time
+        SHARE.AUTO_DISPATCH=args.auto_dispatch
+        SHARE.OBSERVATION_IMAGE=args.observation_image
+        self.world=World(args.config_directory)
+
 
         ncols=args.screen_columns
         max_x=max(list(self.world.pos_slots.keys()))
@@ -65,10 +67,18 @@ class parallel_env(ParallelEnv):
     # Observation space should be defined here.
     # lru_cache allows observation and action spaces to be memoized, reducing clock cycles required to get each agent's space.
     # If your spaces change over time, remove this line (disable caching).
+    
+    @property 
+    def one_observation_size(self):
+        return SHARE.OBJ_TYPE_SIZE+SHARE.OP_TYPE1_SIZE+SHARE.OP_TYPE2_SIZE+SHARE.PRODUCT_TYPE_SIZE+4
     @functools.lru_cache(maxsize=None)
-    def observation_space(self, agent):
+    def observation_space(self, agent):#todo  dispatch see all obs
+        if SHARE.OBSERVATION_IMAGE:
+            tsize=SHARE.TILE_SIZE
+            return Box(0,255,(3*tsize,(2*SHARE.MAX_AGENT_SEE_DISTANCE+1)*tsize,3),dtype=np.uint8)
+        
         # gymnasium spaces are defined and documented here: https://gymnasium.farama.org/api/spaces/
-        return Box(-1,1,((2*SHARE.MAX_AGENT_SEE_DISTANCE+1)*19,))
+        return Box(-1,1,((2*SHARE.MAX_AGENT_SEE_DISTANCE+1)*self.one_observation_size,),dtype=np.float32)
 
     # Action space should be defined here.
     # If your spaces change over time, remove this line (disable caching).
@@ -76,11 +86,7 @@ class parallel_env(ParallelEnv):
     def action_space(self, agent):
         return Discrete(5)
     
-    def next_crane(self):
-        for c in self.world.all_cranes:
-            c.color=Color(255,255,255)
-        self.world.next_crane()
-        self.world.cur_crane.color=Color(255,0,0)
+
 
     def render(self):
         if self.render_mode is None:

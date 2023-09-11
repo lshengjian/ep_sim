@@ -55,8 +55,9 @@ class Renderer:
         #self._check_cache()
         #xs=list(map(lambda c:int(c.x+0.5) , self.world.all_cranes))
         self._surface.fill((0,0,0))
+        left=(len(self.world.products)+0.2)*SHARE.TILE_SIZE
         self.show_text(pygame,f'R:{self.world.reward} S:{self.world.score} T:{self.world.step_count}',
-                       int(self.window_size[0]*0.618+0.5),6,SHARE.TILE_SIZE,True,(155,34,237))
+                       left,SHARE.TILE_SIZE//2,SHARE.TILE_SIZE,True,(155,34,237))
         self._draw_products(pygame)
         merges=[]
         crane_offsets={}#:Dict[int,Crane]

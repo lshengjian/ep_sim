@@ -51,16 +51,16 @@ class ManualControl:
             self.reset()
             return
         if key == "q":
-            self.env.world._next_product()
+            self.env.world.shift_product()
             return
         if key == "tab":
             #print('next_crane')
-            self.env.next_crane()
+            self.env.world.next_crane()
             return
-        # if key == "space":
-        #     self.env.world.put_product()
-        #     self.env.render()
-        #     return
+        if key == "space":
+            self.env.world.put_product()
+            self.env.render()
+            return
 
         key_to_action = {
             "left": Actions.left,
