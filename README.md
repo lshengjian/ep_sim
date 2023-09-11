@@ -1,24 +1,25 @@
-Step by step learning reinforcement learning
+#电镀强化学习仿真环境
 
-# install Gymnasium on Windows 11
+## 安装
 
-## Classic Control
 ``` python
-pip install gymnasium[classic-control]
+pip install -r requirements
 ```
-## Box2d
-- download [swigwin](http://prdownloads.sourceforge.net/swig/swigwin-4.1.1.zip)
-- unzip to your work directory
-- add swigwin-4.1.1 directory to system PATH
+## 配置
+
+- 全局参数在 config/args.yaml
+- 生产数据在 config/demo 目录
+
+## 运行
+### 自动上料demo
+
 ``` python
-pip install gymnasium[classic-box2d]
+python play_auto.py
 ```
-## MuJoCo
-- download [mojoco 2.1.5](https://github.com/deepmind/mujoco/releases?page=2)
-- unzip to your home directory .mujoco and rename it to mujoco210
-- add C:/Users/[your account]/.mujoco/mujoco210/bin to system PATH
+### 手工上料demo
+
 ``` python
-pip install gymnasium[classic-mujoco]
+python play_manual_control.py
 ```
 
 
