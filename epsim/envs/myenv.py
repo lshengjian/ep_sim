@@ -131,8 +131,3 @@ class MyEnv(Env):
     def close(self):
         self.renderer.close()
 
-    # def get_state(self):# todo
-    #     return self.state
-    
-    # def get_observations(self):
-    #     return get_observation(self.machines_img,self.world.cur_crane.x,13) 

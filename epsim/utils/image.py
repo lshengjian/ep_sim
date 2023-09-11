@@ -31,21 +31,6 @@ def get_state(img:np.ndarray,num_pructs:int=5,ncols:int=17,max_x:int=32,tile_siz
 
 
 
- 
-def get_observation(state_img:np.ndarray,x:int,view_distance=7,cell_size=48,max_x=32):
-    assert x>0
-    h,w,c=state_img.shape
-    bound=1+2*view_distance
-    rt=np.zeros((h,cell_size*bound,c),dtype=np.uint8)
-    half=bound//2
-    x1,x2=int(x-half),int(x+half)
-    if x1<0:x1=0
-    if x2>=max_x:x2=max_x
-    dis=x2-x1
-    img=state_img[:,x1*cell_size:(x2+1)*cell_size]
-    start=half-dis//2
-    rt[:,start*cell_size:(start+dis+1)*cell_size,:]=img
-    return rt
 
 def get_state(screen_img:np.ndarray,nrows=3,ncols=20,cell_size=48):
     h,w,c=screen_img.shape
@@ -61,6 +46,19 @@ def get_state(screen_img:np.ndarray,nrows=3,ncols=20,cell_size=48):
     row_imgs.append(head)
     return np.concatenate(row_imgs,axis=1)
 
+def get_observation(state_img:np.ndarray,x:int,view_distance=7,cell_size=48,max_x=32):
+    assert x>0
+    h,w,c=state_img.shape
+    total=1+2*view_distance
+    rt=np.zeros((h,cell_size*total,c),dtype=np.uint8)
+    x1,x2=int(x-view_distance),int(x+view_distance)
+    if x1<0:x1=0
+    if x2>=max_x:x2=max_x
+    dis=x2-x1
+    img=state_img[:,x1*cell_size:(x2+1)*cell_size]
+    start=view_distance-dis//2
+    rt[:,start*cell_size:(start+dis+1)*cell_size,:]=img
+    return rt
 
 def merge_demo():
     fname=path.abspath(path.dirname(__file__) + '/../../outputs/state.jpg')
@@ -74,15 +72,15 @@ def split_demo():
     fname=path.abspath(path.dirname(__file__) + '/../../outputs/state2.jpg')
     img= Image.open(fname)#.resize((600,800),Image.Resampling.BILINEAR)
     data=np.asarray(img)
-    img=get_observation(data,3,3)
+    img=get_observation(data,1,1)
     img=Image.fromarray(img,'RGB')
-    img.save('outputs/observation_3_3.jpg')
-    img=get_observation(data,3,5)
+    img.save('outputs/observation_1_1.jpg')
+    img=get_observation(data,1,2)
     img=Image.fromarray(img,'RGB')
-    img.save('outputs/observation_3_5.jpg')
-    img=get_observation(data,21,5)
+    img.save('outputs/observation_1_2.jpg')
+    img=get_observation(data,3,2)
     img=Image.fromarray(img,'RGB')
-    img.save('outputs/observation_21_5.jpg')
+    img.save('outputs/observation_3_2.jpg')
 
 if __name__ == "__main__":
     split_demo()

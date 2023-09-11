@@ -9,6 +9,7 @@ from ..render.renderer import Renderer
 from epsim.core import World,WorldObj,Slot,Crane,Actions,SHARE
 from epsim.core.componets import Color
 from epsim.core import SHARE
+
 import logging
 logger = logging.getLogger(__name__)
 def env(render_mode=None):
@@ -53,8 +54,8 @@ class parallel_env(ParallelEnv):
         ncols=args.screen_columns
         max_x=max(list(self.world.pos_slots.keys()))
         
-        rows=int(max_x/ncols+0.5)+1
-        self.renderer=Renderer(self.world,args.fps,rows,ncols)
+        nrows=int(max_x/ncols+0.5)+1
+        self.renderer=Renderer(self.world,args.fps,nrows,ncols)
         
         self.possible_agents = [crane.cfg.name for crane in self.world.all_cranes]
 
@@ -86,7 +87,11 @@ class parallel_env(ParallelEnv):
     def action_space(self, agent):
         return Discrete(5)
     
-
+    # def get_state(self):# todo
+    #     return self.state
+    
+    # def get_observations(self):
+    #     return get_observation(self.machines_img,self.world.cur_crane.x,13) 
 
     def render(self):
         if self.render_mode is None:
@@ -95,11 +100,20 @@ class parallel_env(ParallelEnv):
             )
             return
 
-        return self.renderer.render(self.render_mode)
+        self.screen_img=self.renderer.render(self.render_mode)
+        return self.screen_img
 
     def close(self):
         self.renderer.close()
 
+    def _make_jobs(self):
+        ps=[]
+        for p in self.args.products:
+            ps.extend([p.code]*p.num)
+        self.world.add_jobs(ps)
+        for agv in self.world.all_cranes:
+            agv.color=Color(255,255,255)
+        self.world.cur_crane.color=Color(255,0,0) 
 
     def reset(self, seed=None, options=None):
         """
@@ -109,25 +123,25 @@ class parallel_env(ParallelEnv):
         hands that are played.
         Returns the observations for each agent
         """
-        
+        nrows=self.renderer.nrows
+        ncols=self.renderer.ncols
         self.world.reset()
         self.agents = self.possible_agents[:]
+        if self.render_mode == "human" or self.render_mode == "rgb_array":
+            screen_img=self.render()
+            self.world.get_state_img(screen_img,nrows,ncols)
         
         observations = {}#agent: NONE for agent in self.agents}
         infos = {}#agent: {} for agent in self.agents}
+
         for idx,agv in enumerate(self.world.all_cranes):
-            observations[agv.cfg.name]=self.world.get_observation(idx)
+            if SHARE.OBSERVATION_IMAGE:
+                observations[agv.cfg.name]=self.world.get_observation_img(agv)
+            else:
+                observations[agv.cfg.name]=self.world.get_observation(idx)
             infos[agv.cfg.name]={"action_masks":self.world.get_masks(agv)}
-        self.state = observations
-        ps=[]
-        for p in self.args.products:
-            ps.extend([p.code]*p.num)
-        self.world.add_jobs(ps)
-        for agv in self.world.all_cranes:
-            agv.color=Color(255,255,255)
-        self.world.cur_crane.color=Color(255,0,0)
-        if self.render_mode == "human":
-            self.render()
+        #self.state = observations
+        self._make_jobs()
         return observations, infos
 
     def step(self, actions:dict):
@@ -141,9 +155,9 @@ class parallel_env(ParallelEnv):
         dicts where each dict looks like {agent_1: item_1, agent_2: item_2}
         """
         # If a user passes in actions with no agents, then just return empty observations, etc.
-        if not actions:
-            self.agents = []
-            return {}, {}, {}, {}, {}
+        # if not actions:
+        #     self.agents = []
+        #     return {}, {}, {}, {}, {}
         acts=[0]*len(actions)
         for k,v in actions.items():
             idx=self.agent_name_mapping[k]
@@ -153,28 +167,33 @@ class parallel_env(ParallelEnv):
         self.world.set_commands(acts)
 
         self.world.update()
+        nrows=self.renderer.nrows
+        ncols=self.renderer.ncols
+        if self.render_mode == "human" or self.render_mode == "rgb_array":
+            screen_img=self.render()
+            self.world.get_state_img(screen_img,nrows,ncols)
 
         # rewards for all agents are placed in the rewards dictionary to be returned
         rewards = {agent: self.world.reward for agent in self.agents}
-        
+         #todo : 不要共享奖励，奖励和天车要相关
 
         terminations = {agent: self.world.is_over for agent in self.agents}
         truncations = {agent: False for agent in self.agents}
         observations = {}
         infos = {}
 
-        for idx,agv in enumerate(self.world.all_cranes):
-            observations[agv.cfg.name]=self.world.get_observation(idx)
+        for agv in self.world.all_cranes:
+            if SHARE.OBSERVATION_IMAGE:
+                observations[agv.cfg.name]=self.world.get_observation_img(agv)
+            else:
+                observations[agv.cfg.name]=self.world.get_observation(idx)
             infos[agv.cfg.name]={"action_masks":self.world.get_masks(agv)}
-            if idx==0 and agv.last_action!=0:
-                #print(agv)
-                logger.debug(agv)
+
         self.state = observations
 
 
         if self.world.is_over:
             self.agents = []
 
-        if self.render_mode == "human":
-            self.render()
+
         return observations, rewards, terminations, truncations, infos

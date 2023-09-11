@@ -1,7 +1,7 @@
 from __future__ import annotations
 #from .parallel_epsim import parallel_env
 from epsim.core import *
-#from epsim.utils import save_img
+from epsim.utils import save_img
 import hydra
 import pygame
 
@@ -17,7 +17,6 @@ class ManualControl:
 
     def start(self):
         self.reset()
-        
         while self.running:
             for event in pygame.event.get():
                 if event.type == pygame.QUIT:
@@ -29,9 +28,17 @@ class ManualControl:
         pygame.quit()
 
     def reset(self):
-        _, self.infos = self.env.reset(seed=123)
+        obs, self.infos = self.env.reset(seed=123)
+        self.env.world.shift_product()
+        self.env.render()
+        print(obs['H1'].shape)
+        
+
     def step(self, actions):
         obs, rewards, terminateds, truncateds,self.infos = self.env.step(actions)
+        key=self.env.world.cur_crane.cfg.name
+        #print(obs[key].shape)
+        save_img(obs[key],'outputs/'+key+'.jpg')
         dones=list(terminateds.values())
         if dones[0]:
             print("game over!")
@@ -76,6 +83,6 @@ class ManualControl:
             carne=self.env.world.cur_crane
             #if  self.infos[carne.cfg.name]['action_masks'][action]:
             actions[carne.cfg.name]=action
-            self.step(actions)
-        else:
-            self.step(actions)
+        self.step(actions)
+        
+        

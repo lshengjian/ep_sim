@@ -11,7 +11,7 @@ from .crane import Crane
 from .slot import Slot
 from .workpiece import Workpiece
 from .config import build_config
-
+from epsim.utils import get_state,get_observation # for image
 import logging
 logger = logging.getLogger(__name__)
 '''
@@ -143,6 +143,13 @@ class World:
         if self.todo_cnt<1:
             self.is_over=True
     
+    def get_state_img(self,scrern_img:np.ndarray,nrows,ncols): #仿真系统的全部状态数据
+        self.state= get_state(scrern_img,nrows,ncols,SHARE.TILE_SIZE)
+        return self.state
+    
+    def get_observation_img(self,agv:Crane):
+        return  get_observation(self.state,agv.x,SHARE.MAX_AGENT_SEE_DISTANCE,SHARE.TILE_SIZE,SHARE.MAX_X)
+
     def get_state(self): #仿真系统的全部状态数据
         rt=[]
         for crane in self.all_cranes:
@@ -153,10 +160,9 @@ class World:
             wp=Workpiece.make_new(pcode)
             rt.append(wp.state2data())
         return np.array(rt,dtype=np.float32)
-
-    def get_observation(self,crane_idx:int=0):
-        assert 0<=crane_idx<len(self.all_cranes)
-        agv:Crane=self.all_cranes[crane_idx]
+    
+    def get_observation(self,agv:Crane):
+   
         group:int=agv.cfg.group
         rt=[]
         rt.append(agv.state2data())

@@ -23,15 +23,15 @@ def make_surface(img,pygame):
 
 class Renderer:
     LANG:str='chinese'
-    def __init__(self,world:World,fps:int=4,nrow=3,ncol=17):
+    def __init__(self,world:World,fps:int=4,nrows=3,ncols=17):
         self.world:World=world
         self.fps=fps
         self._surface = None
         self.clock = None
-        self.nrow=nrow
-        self.ncol=ncol
+        self.nrows=nrows
+        self.ncols=ncols
         tile_size=SHARE.TILE_SIZE
-        self.window_size =  ncol*tile_size, tile_size*(nrow*3+1)
+        self.window_size =  ncols*tile_size, tile_size*(nrows*3+1)
         # print(nrow,ncol)
         # print(self.window_size)
 
@@ -67,8 +67,8 @@ class Renderer:
                 merges.append(x)
                 crane_offsets[x]=agv
         for x,s in self.world.pos_slots.items():
-            r=x//self.ncol
-            c=x%self.ncol
+            r=x//self.ncols
+            c=x%self.ncols
             if x not in merges:
                 self._surface.blit(make_surface(s.image,pygame),(c*SHARE.TILE_SIZE,SHARE.TILE_SIZE*(3*(r+1)+1)))
             else:
@@ -82,8 +82,8 @@ class Renderer:
         for agv in self.world.all_cranes:
             x=int(agv.x+0.5)
             if  x in merges: continue
-            r=x//self.ncol
-            c=x%self.ncol
+            r=x//self.ncols
+            c=x%self.ncols
             img=make_surface(agv.image,pygame)
             self._surface.blit(img,(c*SHARE.TILE_SIZE,(agv.y+3*(r+1))*SHARE.TILE_SIZE))
            
