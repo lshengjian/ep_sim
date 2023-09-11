@@ -7,7 +7,7 @@ import hydra
 def main(cfg: "DictConfig"):  # noqa: F821
    env = parallel_env(render_mode="human",args=cfg)
    policy=MaskSelect(env)  
-   #policy=RandomSelect(env)
+   #policy=RandomSelect(env) 
    observations, infos = env.reset(seed=119)
    for k in range(1000):
       actions=policy.decision(observations,infos)
@@ -18,6 +18,7 @@ def main(cfg: "DictConfig"):  # noqa: F821
       if np.any(dones):
          print('RESET')
          observations, infos = env.reset()
+      env.world.next_crane()
    # img = Image.fromarray(observation)
    # img.save("state.jpg")
    env.close()

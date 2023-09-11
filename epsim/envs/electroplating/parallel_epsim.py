@@ -174,8 +174,8 @@ class parallel_env(ParallelEnv):
             self.world.get_state_img(screen_img,nrows,ncols)
 
         # rewards for all agents are placed in the rewards dictionary to be returned
-        rewards = {agent: self.world.reward for agent in self.agents}
-         #todo : 不要共享奖励，奖励和天车要相关
+        rewards = self.world.rewards
+        
 
         terminations = {agent: self.world.is_over for agent in self.agents}
         truncations = {agent: False for agent in self.agents}

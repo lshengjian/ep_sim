@@ -54,7 +54,7 @@ class World:
         self.enableAutoPut=SHARE.AUTO_DISPATCH
         self.is_over=False
         self.todo_cnt=0
-        self.reward=0
+        self.rewards={}
         self.score=0
         self.step_count=0
         self.ops_dict:Dict[int,OperateData]=None
@@ -130,16 +130,17 @@ class World:
         if self.is_over:
             return
         self.step_count+=1
-        self.reward=0
-        for c in self.all_cranes:
-            c.step()
+
+        for crane in self.all_cranes:
+            self.rewards[crane.cfg.name]=0
+            crane.step()
 
         slots=self.pos_slots.values()
-        for s in slots:
-            s.step()
+        for slot in slots:
+            slot.step()
         self._check_cranes()
         self._check_slots()
-        self.score+=self.reward
+        self.score+=sum(self.rewards.values())
         if self.todo_cnt<1:
             self.is_over=True
     
@@ -191,6 +192,8 @@ class World:
         for slot in  self.pos_slots.values():
             slot.reset()
         Workpiece.UID.clear()
+        for crane in self.all_cranes:
+            self.rewards[crane.cfg.name]=0
         
         
     def get_group_bound(self,group=1):
@@ -287,11 +290,8 @@ class World:
                 if wp2 is None  : #天车载物，加工槽空闲
                     if slot.x<crane.x:
                         dir.add(Actions.left)
-                        #masks[Actions.left]=1
                     elif slot.x>crane.x:
                         dir.add(Actions.right)
-                        #print('add right')
-                        #masks[Actions.right]=1
                     elif  crane.y<eps:
                         masks[Actions.bottom]=1
                         return
@@ -302,16 +302,13 @@ class World:
                 if slot.timer>=wp2.target_op_limit.duration-10: #todo
                     if slot.x<crane.x:
                         dir.add(Actions.left)
-                        #print("left")
                     elif slot.x>crane.x:
                         dir.add(Actions.right)
-                        #print("right")
-        #print(dir)
         if Actions.left in dir:
             masks[Actions.left]=1
         if Actions.right in dir:
             masks[Actions.right]=1
-            #print('add right')
+ 
 
 
     def _limit_disable(self,crane:Crane,masks:np.ndarray):
@@ -392,11 +389,9 @@ class World:
         '''  
 
         wp,reward=source.take_out()
-        self.reward+=reward
-
         if type(target) is Slot: 
             if target in self.ends:
-                self.reward+=10
+                self.rewards[source.cfg.name]+=10
                 self.todo_cnt-=1
                 del wp
                 return 
@@ -405,11 +400,13 @@ class World:
                 target=self.pos_slots[x]
         if target.carrying!=None:
             logger.info(f'{target} already have {target.carrying}')
+            self.rewards[source.cfg.name]-=5
             self.is_over=True
             return 
 
         target.put_in(wp)
         if type(target) is Crane:
+            self.rewards[target.cfg.name]=reward
             self.plan_next(wp)
         if source in self.starts and self.enableAutoPut:
             self.products2starts()
@@ -433,6 +430,7 @@ class World:
             if wp!=None and crane.last_action==Actions.bottom  :
                 if wp.target_op_limit.op_key!=slot.cfg.op_key:
                     logger.info(f'{wp.target_op_limit.op_key} not same as {slot.cfg.op_key}')
+                    self.rewards[crane.cfg.name]-=5
                     self.is_over=True
                     return
                 self._translate(crane,slot)
@@ -445,6 +443,10 @@ class World:
             if abs(c.x-crane.x)<=SHARE.MIN_AGENT_SAFE_DISTANCE:
                 collide=True
                 logger.error(f'{c} too close to {crane}')
+                if c.last_action!=Actions.stay:
+                    self.rewards[c.cfg.name]-=5
+                if crane.last_action!=Actions.stay:
+                    self.rewards[crane.cfg.name]-=5
                 break
 
         return collide
@@ -461,12 +463,24 @@ class World:
             if s.timer>op.max_time+SHARE.LONG_ALARM_TIME:
                 self.is_over=True
                 logger.error(f'{s} op timeout!')
+                agvs=[]
+                for agv in self.group_cranes[s.cfg.group]:
+                    if (agv.carrying is None):
+                        agvs.append((abs(agv.x-s.x),agv))
+                
+                if len(agvs)>0:
+                    agvs.sort(key=lambda x:x[0])
+                    agv=agvs[0][1]  #最近的空闲天车失职！
+                    self.rewards[agv.cfg.name]-=5
+                    
+
                 break  
 
     def _check_cranes(self):
         for c in self.all_cranes:
             if  self._out_bound(c):
                 logger.error(f'{c} out  bount!')
+                self.rewards[c.cfg.name]-=5
                 self.is_over=True
                 
                 return

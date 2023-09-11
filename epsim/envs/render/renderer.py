@@ -56,7 +56,8 @@ class Renderer:
         #xs=list(map(lambda c:int(c.x+0.5) , self.world.all_cranes))
         self._surface.fill((0,0,0))
         left=(len(self.world.products)+0.2)*SHARE.TILE_SIZE
-        self.show_text(pygame,f'R:{self.world.reward} S:{self.world.score} T:{self.world.step_count}',
+        key=self.world.cur_crane.cfg.name
+        self.show_text(pygame,f'R:{self.world.rewards[key]} S:{self.world.score} T:{self.world.step_count}',
                        left,SHARE.TILE_SIZE//2,SHARE.TILE_SIZE,True,(155,34,237))
         self._draw_products(pygame)
         merges=[]
