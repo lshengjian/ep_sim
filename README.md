@@ -2,9 +2,9 @@
 ![自动上料演示](./images/demo-auto.jpg)
 
 ## 安装
-
+Python 3.9+.
 ``` python
-pip install -r requirements
+pip install -r requirements.txt
 ```
 ## 配置
 

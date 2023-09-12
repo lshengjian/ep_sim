@@ -21,7 +21,13 @@ class ManualControl:
             for event in pygame.event.get():
                 if event.type == pygame.QUIT:
                     self.running = False
+                elif event.type==pygame.K_q:
+                        self.running = False
+                        break
                 elif event.type == pygame.KEYDOWN:
+                    
+
+                    #print(event.key)
                     key=pygame.key.name(event.key)
                     self.key_handler(key)
                     self.env.render()
@@ -57,10 +63,10 @@ class ManualControl:
         if key == "backspace":
             self.reset()
             return
-        if key == "q":
+        if key == "left shift":
             self.env.world.shift_product()
             return
-        if key == "tab":
+        if key == "left ctrl":
             #print('next_crane')
             self.env.world.next_crane()
             return

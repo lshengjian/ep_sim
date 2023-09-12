@@ -29,8 +29,8 @@ class SHARE:
 
 
 WINDOW_TITLE={
-    'chinese':'电镀仿真器 | 换天车(tab),换产品(q),移动(→,↑,←,↓)',
-    'english':'Electroplating simulator | Change the overhead crane (tab), change the product (q), move (→,↑,←,↓)', 
+    'chinese':'电镀仿真器 | 换天车(left ctrl),换产品(left shift),移动(→,↑,←,↓)',
+    'english':'Electroplating simulator | Change the overhead crane (left ctrl), change the product (left shift), move (→,↑,←,↓)', 
 }
 
 class ObjType(IntEnum): 

@@ -1,5 +1,8 @@
-gymnasium==0.29.0
+gymnasium==0.28.1
 hydra-core==1.3.2
-numpy==1.25.2
+matplotlib==3.7.2
+numpy==1.25.1
+pettingzoo==1.24.1
 Pillow==10.0.0
-pygame==2.1.3
+pygame==2.5.1
+
