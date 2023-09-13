@@ -50,7 +50,7 @@ class Crane(WorldObj):
     def put_in(self,wp:Workpiece):
         if wp is None:
             return
-        logger.info(f'put {wp} to {self}')
+        #logger.info(f'put {wp} to {self}')
         #print(f'put {wp} to {self}')
         wp.attached=self
         self.carrying=wp

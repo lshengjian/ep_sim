@@ -53,6 +53,7 @@ class parallel_env(ParallelEnv):
 
         ncols=args.screen_columns
         max_x=max(list(self.world.pos_slots.keys()))
+        SHARE.MAX_X=max_x
         
         nrows=int(max_x/ncols+0.5)+1
         self.renderer=Renderer(self.world,args.fps,nrows,ncols)
@@ -140,12 +141,12 @@ class parallel_env(ParallelEnv):
             screen_img=self.render()
             self.world.get_state_img(screen_img,nrows,ncols)
         
-        observations, infos = self.make_info()
+        observations, infos = self._make_info()
             
         self._make_jobs()
         return observations, infos
 
-    def make_info(self):
+    def _make_info(self):
         observations = {}#agent: NONE for agent in self.agents}
         infos = {}#agent: {} for agent in self.agents}
 
@@ -175,10 +176,12 @@ class parallel_env(ParallelEnv):
         # if not actions:
         #     self.agents = []
         #     return {}, {}, {}, {}, {}
-        acts=[0]*len(actions)
-        for k,v in actions.items():
-            idx=self.agent_name_mapping[k]
-            acts[idx]=v
+        # acts=[0]*len(actions)
+        # for k,v in actions.items():
+        #     idx=self.agent_name_mapping[k]
+        #     acts[idx]=v
+
+        acts=list(actions.values())
 
         
         self.world.set_commands(acts)
@@ -196,7 +199,7 @@ class parallel_env(ParallelEnv):
 
         terminations = {agent: self.world.is_over for agent in self.agents}
         truncations = {agent: False for agent in self.agents}
-        observations, infos = self.make_info()
+        observations, infos = self._make_info()
 
         # if self.world.is_over:
         #     self.agents = []

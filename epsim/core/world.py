@@ -143,6 +143,15 @@ class World:
         self.score+=sum(self.rewards.values())
         if self.todo_cnt<1:
             self.is_over=True
+            logger.info("!!!OK!!!")
+        elif self.enableAutoPut:
+            all_empty=True
+            for s in self.starts:
+                if s.carrying !=None:
+                    all_empty=False
+                    break
+            if all_empty and len(self.products)>0 and  np.random.random()<0.003:
+                self.products2starts()
     
     def get_state_img(self,scrern_img:np.ndarray,nrows,ncols): #仿真系统的全部状态数据
         self.state= get_state(scrern_img,nrows,ncols,SHARE.TILE_SIZE)
@@ -229,12 +238,12 @@ class World:
         self.product_procs.clear()
 
 
-        for rec in procs:
-            pd:OpLimitData=rec
+        for data in procs:
+            pd:OpLimitData=data
             self.product_procs[pd.product_code].append(pd)
 
-        for rec in slots:
-            s:SlotData=rec
+        for data in slots:
+            s:SlotData=data
             g=s.group
             x1,x2=self.group_limits.get(g,[1000,-1000])
             for x in s.offsets:
@@ -252,8 +261,8 @@ class World:
                 self.pos_slots[int(x)]=slot
                 self.group_slots[g].append(slot)
 
-        for rec in cranes:
-            cfg:CraneData=rec
+        for data in cranes:
+            cfg:CraneData=data
             crane:Crane=Crane(cfg.offset,cfg)
             self.all_cranes.append(crane)
             self.group_cranes[cfg.group].append(crane)
@@ -261,8 +270,9 @@ class World:
  
     def _limit_only_top(self,crane:Crane,masks:np.ndarray)->bool:
         rt=False
-        if 0<crane.y<SHARE.MAX_Y and crane.carrying!=None:
+        if 1<=crane.y<SHARE.MAX_Y and crane.carrying!=None:
             masks[Actions.top]=1
+            #print(masks)
             rt=True
         return rt
 
@@ -279,6 +289,8 @@ class World:
         wp:Workpiece=crane.carrying
         dir=set()
         for x in range(x1,x2+1):
+            # if x>=13 and crane.cfg.name=='H1':
+
             if x not in self.pos_slots: 
                 continue
             slot=self.pos_slots[x]
@@ -296,10 +308,10 @@ class World:
                         masks[Actions.bottom]=1
                         return
             elif wp2!=None : #天车空闲，加工槽载物
-                if abs(crane.y-SHARE.MAX_Y)<=SHARE.EPS and abs(slot.x-crane.x)<SHARE.EPS and slot.timer>=wp2.target_op_limit.duration-3  :
+                if abs(crane.y-SHARE.MAX_Y)<=eps and abs(slot.x-crane.x)<eps and slot.timer>=wp2.target_op_limit.duration-10  :
                     masks[Actions.top]=1
                     return
-                if slot.timer>=wp2.target_op_limit.duration-10: #todo
+                if slot.timer>=wp2.target_op_limit.duration-20: #todo
                     if slot.x<crane.x:
                         dir.add(Actions.left)
                     elif slot.x>crane.x:
@@ -311,7 +323,7 @@ class World:
  
 
 
-    def _limit_disable(self,crane:Crane,masks:np.ndarray):
+    def _check_disable(self,crane:Crane,masks:np.ndarray):
         eps=SHARE.EPS
         x1,x2=self.group_limits[crane.cfg.group]
         if crane.y<eps:
@@ -345,11 +357,16 @@ class World:
         masks = np.zeros(5, dtype=np.int8)
         masks[Actions.stay]=1
         if self._limit_only_top(crane,masks):
+            #if crane.cfg.name=='H1':print('only top',masks)
             return masks
         if self._limit_only_bottom(crane,masks):
+            #if crane.cfg.name=='H1':print('only bottom')
             return masks
         self._limit_allow_move(crane,masks)
-        self._limit_disable(crane,masks)
+        #if crane.cfg.name=='H1':print('allow_move',masks)
+        self._check_disable(crane,masks)
+        #if crane.cfg.name=='H1':print('limit_disable',masks)
+        
         return masks
 
 
@@ -408,7 +425,7 @@ class World:
         if type(target) is Crane:
             self.rewards[target.cfg.name]=reward
             self.plan_next(wp)
-        if source in self.starts and self.enableAutoPut:
+        if source in self.starts and self.enableAutoPut and np.random.random()<0.001:
             self.products2starts()
          
         
