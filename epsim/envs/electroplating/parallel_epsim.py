@@ -12,13 +12,13 @@ from epsim.core import SHARE
 
 import logging
 logger = logging.getLogger(__name__)
-def env(render_mode=None):
+def env(render_mode=None,args: "DictConfig"  = None):
     """
     The env function often wraps the environment in wrappers by default.
     You can find full documentation for these methods
     elsewhere in the developer documentation.
     """
-    env = raw_env(render_mode=render_mode)
+    env = raw_env(render_mode=render_mode,args=args)
     # this wrapper helps error handling for discrete action spaces
     env = wrappers.AssertOutOfBoundsWrapper(env)
     # Provides a wide vareity of helpful user errors
@@ -27,12 +27,12 @@ def env(render_mode=None):
     return env
 
 
-def raw_env(render_mode=None):
+def raw_env(render_mode=None,args: "DictConfig"  = None):
     """
     To support the AEC API, the raw_env() function just uses the from_parallel
     function to convert from a ParallelEnv to an AEC env
     """
-    env = parallel_env(render_mode=render_mode)
+    env = parallel_env(render_mode=render_mode,args=args)
     env = parallel_to_aec(env)
     return env
 
@@ -74,12 +74,16 @@ class parallel_env(ParallelEnv):
         return SHARE.OBJ_TYPE_SIZE+SHARE.OP_TYPE1_SIZE+SHARE.OP_TYPE2_SIZE+SHARE.PRODUCT_TYPE_SIZE+4
     @functools.lru_cache(maxsize=None)
     def observation_space(self, agent):#todo  dispatch see all obs
+        rt={'observation':None,'image':None}
         if SHARE.OBSERVATION_IMAGE:
             tsize=SHARE.TILE_SIZE
-            return Box(0,255,(3*tsize,(2*SHARE.MAX_AGENT_SEE_DISTANCE+1)*tsize,3),dtype=np.uint8)
+            rt['image']=Box(0,255,(3*tsize,(2*SHARE.MAX_AGENT_SEE_DISTANCE+1)*tsize,3),dtype=np.uint8)
+        else:
+            rt['observation']=Box(-1,1,((2*SHARE.MAX_AGENT_SEE_DISTANCE+1)*self.one_observation_size,),dtype=np.float32)
+
         
         # gymnasium spaces are defined and documented here: https://gymnasium.farama.org/api/spaces/
-        return Box(-1,1,((2*SHARE.MAX_AGENT_SEE_DISTANCE+1)*self.one_observation_size,),dtype=np.float32)
+        return rt
 
     # Action space should be defined here.
     # If your spaces change over time, remove this line (disable caching).
@@ -106,6 +110,11 @@ class parallel_env(ParallelEnv):
     def close(self):
         self.renderer.close()
 
+    # def observe(self, agent: str):
+    #     print(f'observe for {agent}')
+    #     return self.observations[agent]
+
+
     def _make_jobs(self):
         ps=[]
         for p in self.args.products:
@@ -131,6 +140,12 @@ class parallel_env(ParallelEnv):
             screen_img=self.render()
             self.world.get_state_img(screen_img,nrows,ncols)
         
+        observations, infos = self.make_info()
+            
+        self._make_jobs()
+        return observations, infos
+
+    def make_info(self):
         observations = {}#agent: NONE for agent in self.agents}
         infos = {}#agent: {} for agent in self.agents}
 
@@ -138,11 +153,13 @@ class parallel_env(ParallelEnv):
             if SHARE.OBSERVATION_IMAGE:
                 observations[agv.cfg.name]=self.world.get_observation_img(agv)
             else:
-                observations[agv.cfg.name]=self.world.get_observation(idx)
+                observations[agv.cfg.name]=self.world.get_observation(agv)
             infos[agv.cfg.name]={"action_masks":self.world.get_masks(agv)}
-        #self.state = observations
-        self._make_jobs()
-        return observations, infos
+        self.observations = observations
+        self.infos = infos
+        # for name,obs,mask in zip(infos.keys(),observations.values(),infos.values()):
+        #     self.observations[name]={'observation':obs,'action_masks':mask}
+        return observations,infos
 
     def step(self, actions:dict):
         """
@@ -179,21 +196,9 @@ class parallel_env(ParallelEnv):
 
         terminations = {agent: self.world.is_over for agent in self.agents}
         truncations = {agent: False for agent in self.agents}
-        observations = {}
-        infos = {}
+        observations, infos = self.make_info()
 
-        for agv in self.world.all_cranes:
-            if SHARE.OBSERVATION_IMAGE:
-                observations[agv.cfg.name]=self.world.get_observation_img(agv)
-            else:
-                observations[agv.cfg.name]=self.world.get_observation(idx)
-            infos[agv.cfg.name]={"action_masks":self.world.get_masks(agv)}
-
-        self.state = observations
-
-
-        if self.world.is_over:
-            self.agents = []
-
+        # if self.world.is_over:
+        #     self.agents = []
 
         return observations, rewards, terminations, truncations, infos

@@ -175,7 +175,7 @@ class World:
                 rt.append(slot.state2data())
         for k in range(len(rt),2*SHARE.MAX_AGENT_SEE_DISTANCE+1):
             rt.append([0.]*len(rt[0]))
-        return np.array(rt,dtype=np.float32)
+        return np.array(rt,dtype=np.float32).ravel()
 
     def reset(self):
         #self.load_config()

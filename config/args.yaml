@@ -1,6 +1,6 @@
 language: chinese  #english  or chinese
 auto_dispatch: true
-observation_image: true
+observation_image: false
 config_directory: demo
 
 alarm:
