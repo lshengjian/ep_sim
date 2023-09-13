@@ -12,7 +12,7 @@ RENDER_DIR=os.path.abspath(os.path.dirname(__file__) )
 def get_font(pygame,font_size=16,shadow=False):
     if shadow:
         return pygame.font.Font(RENDER_DIR+'/fonts/WHARMBY.TTF', font_size)
-    return pygame.SysFont('arial', font_size)
+    return pygame.font.SysFont('arial', font_size)
 
 
 def make_surface(img,pygame):
@@ -58,7 +58,10 @@ class Renderer:
         left=(len(self.world.products)+0.2)*SHARE.TILE_SIZE
         key=self.world.cur_crane.cfg.name
         self.show_text(pygame,f'R:{self.world.rewards[key]} S:{self.world.score} T:{self.world.step_count}',
-                       left,SHARE.TILE_SIZE//2,SHARE.TILE_SIZE,True,(155,34,237))
+                       left,SHARE.TILE_SIZE//3,SHARE.TILE_SIZE,True,(155,34,237))
+        if key in self.world.masks:
+            flags=self.world.mask2str(self.world.masks[key])
+            self.show_text(pygame,f'{flags}',left,SHARE.TILE_SIZE+20,SHARE.TILE_SIZE//2,False,(55,234,137))
         self._draw_products(pygame)
         merges=[]
         crane_offsets={}#:Dict[int,Crane]
@@ -95,6 +98,7 @@ class Renderer:
             return
         try:
             import pygame
+            import pygame.font
             #from pygame import gfxdraw
             
         except ImportError as e:

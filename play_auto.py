@@ -8,14 +8,14 @@ def main(cfg: "DictConfig"):  # noqa: F821
    env = parallel_env(render_mode="human",args=cfg)
    policy=MaskSelect(env)  
    #policy=RandomSelect(env) 
-   observations, infos = env.reset(seed=119)
+   observations, infos = env.reset(seed=123)
    for k in range(1000):
       actions=policy.decision(observations,infos)
       observations, rewards, terminateds, truncateds, infos = env.step(actions)
       if k==10:
          save_img(env.render(),'outputs/state.jpg')
       dones=list(terminateds.values())
-      if np.any(dones):
+      if any(dones):
          print('RESET')
          observations, infos = env.reset()
       env.world.next_crane()

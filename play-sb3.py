@@ -7,7 +7,7 @@ For more information about invalid action masking in SB3, see https://sb3-contri
 import glob
 import os
 import time
-
+import numpy as np
 from sb3_contrib import MaskablePPO
 from sb3_contrib.common.maskable.policies import MaskableActorCriticPolicy
 from sb3_contrib.common.wrappers import ActionMasker
@@ -53,7 +53,7 @@ def mask_fn(env):
     # Do whatever you'd like in this function to return the action mask
     # for the current env. In this example, we assume the env has a
     # helpful method we can rely on.
-    return env.action_mask()
+    return env.action_mask() #np.ones(5,dtype=np.uint8) 
 
 
 def train_action_mask(env_fn, steps=10_000, seed=0, **env_kwargs):
@@ -121,7 +121,7 @@ def eval_action_mask(env_fn, num_games=100, render_mode=None, **env_kwargs):
                     # Note: PettingZoo expects integer actions # TODO: change chess to cast actions to type int?
                 act = int(
                     model.predict(
-                        observation, action_masks=info['action_masks'], deterministic=True
+                        observation,action_masks=ms,  deterministic=True #
                     )[0]
                 )
                 #print(act)
@@ -150,7 +150,7 @@ def main(cfg: "DictConfig"):  # noqa: F821
     env_fn = electroplating_v1
 
     env_kwargs = {'args':cfg}
-    train_action_mask(env_fn, steps=100000, seed=9, **env_kwargs)
+    #train_action_mask(env_fn, steps=1000000, seed=333, **env_kwargs)
     eval_action_mask(env_fn, num_games=100,render_mode='human', **env_kwargs)
 
 

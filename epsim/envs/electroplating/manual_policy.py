@@ -37,7 +37,7 @@ class ManualControl:
         obs, self.infos = self.env.reset(seed=123)
         self.env.world.shift_product()
         self.env.render()
-        print(obs['H1'].shape)
+        #print(obs['H11'].shape)
         
 
     def step(self, actions):
@@ -87,7 +87,7 @@ class ManualControl:
         if key in key_to_action.keys():
             action = key_to_action[key]
             carne=self.env.world.cur_crane
-            print('action_masks',self.env.infos[carne.cfg.name]['action_masks'])
+            #print('action_masks',self.env.infos[carne.cfg.name]['action_masks'])
             if  self.env.infos[carne.cfg.name]['action_masks'][action]:
                 actions[carne.cfg.name]=action
         self.step(actions)

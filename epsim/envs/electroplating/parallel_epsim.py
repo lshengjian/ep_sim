@@ -78,9 +78,9 @@ class parallel_env(ParallelEnv):
         rt={'observation':None,'image':None}
         if SHARE.OBSERVATION_IMAGE:
             tsize=SHARE.TILE_SIZE
-            rt['image']=Box(0,255,(3*tsize,(2*SHARE.MAX_AGENT_SEE_DISTANCE+1)*tsize,3),dtype=np.uint8)
+            rt['image']=Box(0,255,(3*tsize,(2*SHARE.MAX_AGENT_SEE_DISTANCE+1 )*tsize,3),dtype=np.uint8)
         else:
-            rt['observation']=Box(-1,1,((2*SHARE.MAX_AGENT_SEE_DISTANCE+1)*self.one_observation_size,),dtype=np.float32)
+            rt['observation']=Box(-1,1,(SHARE.MAX_OBS_LIST_LEN*self.one_observation_size,),dtype=np.float32)
 
         
         # gymnasium spaces are defined and documented here: https://gymnasium.farama.org/api/spaces/

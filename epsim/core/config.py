@@ -44,8 +44,10 @@ def get_file_info(fn:str)->List[str]:
     with fp.open(encoding='utf8') as f: 
         lines=f.readlines()
         lines=list(map(clean_func,lines))
+        lines=list(filter(lambda x :x[0]!='#',lines)) #去掉注释
         field_names=lines[0].split(',')
         data=lines[1:]
+        
     return fp.stem,field_names,data
 
 def _make_ops(data):

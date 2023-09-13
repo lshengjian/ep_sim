@@ -72,6 +72,7 @@ class World:
         self.prd_idx=0
         self.cur_crane_index=0
         self.state=None
+        self.masks={}
         self.load_config()
     
     @property
@@ -145,12 +146,12 @@ class World:
             self.is_over=True
             logger.info("!!!OK!!!")
         elif self.enableAutoPut:
-            all_empty=True
+            have_empty=False
             for s in self.starts:
-                if s.carrying !=None:
-                    all_empty=False
+                if s.carrying is None:
+                    have_empty=True
                     break
-            if all_empty and len(self.products)>0 and  np.random.random()<0.003:
+            if have_empty and len(self.products)>0 and  np.random.random()<0.02:
                 self.products2starts()
     
     def get_state_img(self,scrern_img:np.ndarray,nrows,ncols): #仿真系统的全部状态数据
@@ -172,19 +173,35 @@ class World:
         return np.array(rt,dtype=np.float32)
     
     def get_observation(self,agv:Crane):
+
    
         group:int=agv.cfg.group
         rt=[]
+              
         rt.append(agv.state2data())
         for crane in self.group_cranes[group]:
             if agv==crane:continue
             rt.append(crane.state2data())
+        cs=[]
         for slot in self.group_slots[group]:
-            if abs(slot.x-agv.x)<=SHARE.MAX_AGENT_SEE_DISTANCE:
-                rt.append(slot.state2data())
-        for k in range(len(rt),2*SHARE.MAX_AGENT_SEE_DISTANCE+1):
+            dis=abs(slot.x-agv.x)
+            if dis<=SHARE.MAX_AGENT_SEE_DISTANCE:
+                cs.append((dis,slot))
+        if len(cs)>0:
+            cs.sort(key=lambda x:x[0])
+            size=len(rt)
+            for _,slot in cs:
+                if size<SHARE.MAX_OBS_LIST_LEN:
+                    rt.append(slot.state2data())
+                    size+=1
+                else:
+                    break 
+                              
+        for k in range(len(rt),SHARE.MAX_OBS_LIST_LEN):
             rt.append([0.]*len(rt[0]))
-        return np.array(rt,dtype=np.float32).ravel()
+        rt=np.array(rt,dtype=np.float32)
+        #print(rt.shape)
+        return rt.ravel()
 
     def reset(self):
         #self.load_config()
@@ -204,22 +221,45 @@ class World:
         for crane in self.all_cranes:
             self.rewards[crane.cfg.name]=0
         
-        
-    def get_group_bound(self,group=1):
-        return self.group_limits[group]
+    def get_crane_bound(self,crane:Crane):
+        g=crane.cfg.group
+        x1,x2= self.group_limits[g]
+        l_side=list(filter(lambda agv:agv.x<crane.x, self.group_cranes[g]))
+        r_side=list(filter(lambda agv:agv.x>crane.x, self.group_cranes[g]))
+        l_side.sort(key=lambda c:c.x,reverse=True)
+        r_side.sort(key=lambda c:c.x)
+        left=None if len(l_side)<1 else l_side[0]
+        right=None if len(r_side)<1 else r_side[0]
+        nx1=x1
+        nx2=x2
+        if left != None:
+            nx1=left.x+SHARE.MIN_AGENT_SAFE_DISTANCE 
+            if nx1>x2:
+                nx1=x2
+            
+        if right !=  None:
+            nx2=right.x-SHARE.MIN_AGENT_SAFE_DISTANCE
+            if nx2<x1:
+                nx2=x1
+        x1=max(x1,nx1)
+        x2=min(x2,nx2)
+        return int(x1),int(x2),left,right
+            
+    # def get_group_bound(self,group=1):
+    #     return self.group_limits[group]
     
     def products2starts(self):
         ps=self.products[:]
         #print(ps)
         for s in self.starts:
             #print(s)
-            if not s.locked:
-                if len(ps)>0:
-                    wp:Workpiece=Workpiece.make_new(ps[0],s.x)
-                    #print('products2starts')
-                    self.plan_next(wp)
-                    s.put_in(wp)
-                    ps.remove(ps[0])
+            if not s.locked and len(ps)>0:
+                wp:Workpiece=Workpiece.make_new(ps[0],s.x)
+                #print('products2starts')
+                self.plan_next(wp)
+                s.put_in(wp)
+                ps.remove(ps[0])
+                break
         self.products=ps
         self.cur_prd_code=None if len(ps)<1 else ps[0]
 
@@ -251,7 +291,7 @@ class World:
                     x1=x
                 if x>x2:
                     x2=x 
-                self.group_limits[g]=[x1,x2]   
+                self.group_limits[g]=[int(x1),int(x2)]   
                 slot:Slot=Slot(x,s)
                 slot.color=self.ops_dict[slot.cfg.op_key].color
                 if s.op_key==SHARE.START_KEY:
@@ -285,30 +325,34 @@ class World:
     
     def _limit_allow_move(self,crane:Crane,masks:np.ndarray):
         eps=SHARE.EPS
-        x1,x2=self.group_limits[crane.cfg.group]
-        wp:Workpiece=crane.carrying
-        dir=set()
+        x1,x2,*_=self.get_crane_bound(crane)
+        xs=[]
         for x in range(x1,x2+1):
-            # if x>=13 and crane.cfg.name=='H1':
-
             if x not in self.pos_slots: 
                 continue
+            xs.append((abs(x-crane.x),x))
+        xs.sort(key=lambda p:p[0])
+        xs=list(map(lambda p:p[1],xs))
+
+        wp:Workpiece=crane.carrying
+        dir=set()
+        for x in xs:
             slot=self.pos_slots[x]
-            if wp != None and wp.target_op_limit.op_key!=slot.cfg.op_key:
-                continue
-           
             wp2:Workpiece=slot.carrying
             if wp != None:
                 if wp2 is None  : #天车载物，加工槽空闲
-                    if slot.x<crane.x:
-                        dir.add(Actions.left)
-                    elif slot.x>crane.x:
-                        dir.add(Actions.right)
-                    elif  crane.y<eps:
-                        masks[Actions.bottom]=1
-                        return
+                    if  wp.target_op_limit.op_key==slot.cfg.op_key and crane.y<eps:
+                        if abs(slot.x-crane.x)<=eps :
+                            masks[Actions.bottom]=1
+                            return
+                        elif slot.x>crane.x:
+                            dir.add(Actions.right)
+                        elif  np.random.random()<0.9:
+                            dir.add(Actions.left)
+
+                            
             elif wp2!=None : #天车空闲，加工槽载物
-                if abs(crane.y-SHARE.MAX_Y)<=eps and abs(slot.x-crane.x)<eps and slot.timer>=wp2.target_op_limit.duration-10  :
+                if abs(crane.y-SHARE.MAX_Y)<=eps and abs(slot.x-crane.x)<eps and slot.timer>=wp2.target_op_limit.duration-3  :
                     masks[Actions.top]=1
                     return
                 if slot.timer>=wp2.target_op_limit.duration-20: #todo
@@ -325,7 +369,7 @@ class World:
 
     def _check_disable(self,crane:Crane,masks:np.ndarray):
         eps=SHARE.EPS
-        x1,x2=self.group_limits[crane.cfg.group]
+        
         if crane.y<eps:
             masks[Actions.top]=0
         elif crane.y>(self.max_y-eps):
@@ -333,25 +377,37 @@ class World:
         if eps<crane.y<(self.max_y-eps):
             masks[Actions.left]=0
             masks[Actions.right]=0
-        
-        
-        if crane.x-eps<x1:
-            #print('close left side')
-            masks[Actions.left]=0
-        elif crane.x+eps>x2:
-            #print('close right side')
-            masks[Actions.right]=0
-            
 
-        
-        for agv in self.all_cranes:
-            if agv==crane or agv.cfg.group!=crane.cfg.group:
-                continue
-            if agv.x>crane.x and (agv.x-crane.x)<=SHARE.MIN_AGENT_SAFE_DISTANCE:
-                masks[Actions.right]=0
-            if agv.x<crane.x and (crane.x-agv.x)<=SHARE.MIN_AGENT_SAFE_DISTANCE:
-                masks[Actions.left]=0
+        wp=crane.carrying
+        slot=self.pos_slots.get(int(crane.x+0.5),None)
+        if  wp != None and slot!=None and wp.target_op_limit.op_key!=slot.cfg.op_key:
+            masks[Actions.bottom]=0
 
+        # 如果下个工序是交换，则一定要靠交换位的天车才能来提取
+       
+        #x1,x2,L,R=self.get_crane_bound(crane)
+        # #print(crane,x1,x2,L,R)
+        # if L!=None :
+        #     if abs(crane.x-L.x)<=SHARE.MIN_AGENT_SAFE_DISTANCE+1:
+        #         masks[Actions.left]=0
+        #         if L.carrying!=None:
+        #             masks[Actions.right]=1 #给载物天车的让路
+        # elif crane.x-eps<x1:
+        #         masks[Actions.left]=0
+        # if R!=None :
+        #     if abs(R.x-crane.x)<=SHARE.MIN_AGENT_SAFE_DISTANCE+1:
+        #         masks[Actions.right]=0
+        #         if R.carrying!=None:
+        #             masks[Actions.left]=1 #给载物天车的让路
+
+        # elif crane.x+eps>x2:
+        #         masks[Actions.right]=0
+                
+    def mask2str(self,masks):
+        flags=[]
+        for i,m in enumerate(masks):
+            if m: flags.append(Directions[i])
+        return ''.join(flags)
 
     def get_masks(self,crane:Crane):
         masks = np.zeros(5, dtype=np.int8)
@@ -365,6 +421,7 @@ class World:
         self._limit_allow_move(crane,masks)
         #if crane.cfg.name=='H1':print('allow_move',masks)
         self._check_disable(crane,masks)
+        self.masks[crane.cfg.name]=masks
         #if crane.cfg.name=='H1':print('limit_disable',masks)
         
         return masks
@@ -425,8 +482,8 @@ class World:
         if type(target) is Crane:
             self.rewards[target.cfg.name]=reward
             self.plan_next(wp)
-        if source in self.starts and self.enableAutoPut and np.random.random()<0.001:
-            self.products2starts()
+        # if source in self.starts and self.enableAutoPut and np.random.random()<0.001:
+        #     self.products2starts()
          
         
 
