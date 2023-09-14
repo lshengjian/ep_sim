@@ -46,12 +46,10 @@ get_observations()
 4) 天车相撞 游戏结束
 '''
 class World:
-    def __init__(self,config_directory='demo'):
-        # Slot.WarningTime=warning_time
-        # Slot.FatalTime=fatal_time
+    def __init__(self,config_directory='demo',auto_dispatch=True):
         
         self.config_directory=config_directory
-        self.enableAutoPut=SHARE.AUTO_DISPATCH
+        self.enableAutoPut=auto_dispatch
         self.is_over=False
         self.todo_cnt=0
         self.rewards={}
@@ -221,29 +219,18 @@ class World:
         for crane in self.all_cranes:
             self.rewards[crane.cfg.name]=0
         
-    def get_crane_bound(self,crane:Crane):
+    def get_crane_bound(self,crane:Crane)->Tuple[Slot|Crane,Slot|Crane]:
         g=crane.cfg.group
-        x1,x2= self.group_limits[g]
+        x1,x2=map(int, self.group_limits[g])
+        s1=self.pos_slots[x1]
+        s2=self.pos_slots[x2]
         l_side=list(filter(lambda agv:agv.x<crane.x, self.group_cranes[g]))
         r_side=list(filter(lambda agv:agv.x>crane.x, self.group_cranes[g]))
         l_side.sort(key=lambda c:c.x,reverse=True)
         r_side.sort(key=lambda c:c.x)
-        left=None if len(l_side)<1 else l_side[0]
-        right=None if len(r_side)<1 else r_side[0]
-        nx1=x1
-        nx2=x2
-        if left != None:
-            nx1=left.x+SHARE.MIN_AGENT_SAFE_DISTANCE 
-            if nx1>x2:
-                nx1=x2
-            
-        if right !=  None:
-            nx2=right.x-SHARE.MIN_AGENT_SAFE_DISTANCE
-            if nx2<x1:
-                nx2=x1
-        x1=max(x1,nx1)
-        x2=min(x2,nx2)
-        return int(x1),int(x2),left,right
+        left=s1 if len(l_side)<1 else l_side[0]
+        right=s2 if len(r_side)<1 else r_side[0]
+        return left,right
             
     # def get_group_bound(self,group=1):
     #     return self.group_limits[group]
@@ -308,68 +295,55 @@ class World:
             self.group_cranes[cfg.group].append(crane)
         self.max_x: int = max(list(self.pos_slots.keys()))
  
-    def _limit_only_top(self,crane:Crane,masks:np.ndarray)->bool:
-        rt=False
-        if 1<=crane.y<SHARE.MAX_Y and crane.carrying!=None:
-            masks[Actions.top]=1
-            #print(masks)
-            rt=True
-        return rt
-
-    def _limit_only_bottom(self,crane:Crane,masks:np.ndarray)->bool:
-        rt=False
-        if 0<crane.y<SHARE.MAX_Y and crane.carrying is None:
-            masks[Actions.bottom]=1
-            rt=True
-        return rt
-    
-    def _limit_allow_move(self,crane:Crane,masks:np.ndarray):
-        eps=SHARE.EPS
-        x1,x2,*_=self.get_crane_bound(crane)
-        xs=[]
-        for x in range(x1,x2+1):
-            if x not in self.pos_slots: 
-                continue
-            xs.append((abs(x-crane.x),x))
-        xs.sort(key=lambda p:p[0])
-        xs=list(map(lambda p:p[1],xs))
-
-        wp:Workpiece=crane.carrying
-        dir=set()
-        for x in xs:
-            slot=self.pos_slots[x]
-            wp2:Workpiece=slot.carrying
-            if wp != None:
-                if wp2 is None  : #天车载物，加工槽空闲
-                    if  wp.target_op_limit.op_key==slot.cfg.op_key and crane.y<eps:
-                        if abs(slot.x-crane.x)<=eps :
-                            masks[Actions.bottom]=1
-                            return
-                        elif slot.x>crane.x:
-                            dir.add(Actions.right)
-                        elif  np.random.random()<0.9:
-                            dir.add(Actions.left)
-
-                            
-            elif wp2!=None : #天车空闲，加工槽载物
-                if abs(crane.y-SHARE.MAX_Y)<=eps and abs(slot.x-crane.x)<eps and slot.timer>=wp2.target_op_limit.duration-3  :
-                    masks[Actions.top]=1
-                    return
-                if slot.timer>=wp2.target_op_limit.duration-20: #todo
-                    if slot.x<crane.x:
-                        dir.add(Actions.left)
-                    elif slot.x>crane.x:
-                        dir.add(Actions.right)
-        if Actions.left in dir:
-            masks[Actions.left]=1
-        if Actions.right in dir:
-            masks[Actions.right]=1
  
 
 
-    def _check_disable(self,crane:Crane,masks:np.ndarray):
-        eps=SHARE.EPS
+    def _disable_bad(self,crane:Crane,masks:np.ndarray):
+        left,right=self.get_crane_bound(crane)
+        self._not_down(crane, masks)
+        self._not_up(crane, masks,left,right)
+        #self._not_run_far(crane, masks,left,right)
+        self._not_out_bound(crane, masks,left,right)
         
+    def _not_run_far(self, crane, masks,left,right):
+        eps=SHARE.EPS
+        wp:Workpiece=crane.carrying
+        can_go=set()
+        for x in range(left.x,right.x+1):
+            slot=self.pos_slots.get(x,None)
+            if slot is None:continue
+            wp2:Workpiece=slot.carrying
+            if wp != None:
+                if wp2 is None  and wp.target_op_limit.op_key==slot.cfg.op_key: #天车载物，加工槽空闲
+                    if slot.x>crane.x:
+                        can_go.add(Actions.right)
+                    elif slot.x<crane.x:
+                        can_go.add(Actions.left)
+            else:
+                if wp2!=None and slot.timer>wp2.target_op_limit.duration-10:
+                    if slot.x>crane.x:
+                        can_go.add(Actions.right)
+                    elif slot.x<crane.x:
+                        can_go.add(Actions.left)
+
+        if Actions.left not in can_go :
+            masks[Actions.left]=0
+            
+        if Actions.right not in can_go:
+            masks[Actions.right]=0
+
+        # if sum(masks)<2:
+        #     if  type(left) is Crane and  sum(self.masks[left.cfg.name])<2 :  #互相等待
+        #         masks[Actions.right]=1
+        #     if  type(right) is Crane and  sum(self.masks[right.cfg.name])<2 : 
+        #         masks[Actions.left]=1
+            
+
+
+
+
+    def _not_out_bound(self, crane, masks,left,right):
+        eps=SHARE.EPS
         if crane.y<eps:
             masks[Actions.top]=0
         elif crane.y>(self.max_y-eps):
@@ -377,31 +351,88 @@ class World:
         if eps<crane.y<(self.max_y-eps):
             masks[Actions.left]=0
             masks[Actions.right]=0
+        
+        safe_dis=SHARE.MIN_AGENT_SAFE_DISTANCE+2
 
+        if type(left) is Crane :
+            if crane.x<=left.x+safe_dis:
+                masks[Actions.left]=0
+        elif crane.x==left.x:
+            masks[Actions.left]=0
+        
+        if type(right) is Crane :
+            if crane.x>=right.x-safe_dis:
+                masks[Actions.right]=0
+        elif crane.x==right.x:
+            masks[Actions.right]=0
+
+    def _not_down(self, crane, masks):
+        eps=SHARE.EPS
         wp=crane.carrying
-        slot=self.pos_slots.get(int(crane.x+0.5),None)
-        if  wp != None and slot!=None and wp.target_op_limit.op_key!=slot.cfg.op_key:
+        if abs(crane.y-1)<eps and wp!=None:
             masks[Actions.bottom]=0
+            return
+        slot=self.pos_slots.get(crane.x,None)
+        wp2=None if slot is None else slot.carrying
+        if  crane.y<eps :
+            candown=wp != None and wp2 ==None  \
+                and slot!=None and wp.target_op_limit.op_key==slot.cfg.op_key 
+            if  not candown:
+                masks[Actions.bottom]=0
+
+
+    def _not_up(self, crane:Crane, masks,left,right):
+        eps=SHARE.EPS
+        wp=crane.carrying
+
+        if abs(crane.y-1)<eps and wp==None:
+            masks[Actions.top]=0
+            return
+
+        if crane.y<SHARE.MAX_Y:
+            return
+        slot=self.pos_slots.get(crane.x,None)
+        wp2=None if slot is None else slot.carrying
+        if wp is None and wp2 is None: #空天车在空槽不能上行
+            masks[Actions.top]=0
+            return
+        
+        
+        if wp2 is None or wp!=None:
+            return
+         #天车空闲，加工槽载物
+        if slot.timer<wp2.target_op_limit.min_time  :
+            masks[Actions.top]=0
+            return
+        op_limit:OpLimitData=self._get_next_op_limit(wp2)
+        found=False
+        for x in range(left.x,right.x+1):
+           slot=self.pos_slots.get(x,None)
+           wp2=None if slot is None else slot.carrying
+           if slot!=None and wp2 is None and slot.cfg.op_key==op_limit.op_key:
+               found=True
+               break
+        if not found: #下一加工工序不在安全范围内
+            masks[Actions.top]=0
+
+           
+        
+
+
+    def _get_next_op_limit(self,wp:Workpiece):
+        slot:Slot=wp.attached
+        assert slot  is not None
+        cur=wp.target_op_limit
+        ps=self.product_procs[wp.product_code]
+        cur_idx=ps.index(wp.target_op_limit)
+        rt=None
+        if cur_idx<len(ps)-1:
+            rt=ps[cur_idx+1]
+        return rt
 
         # 如果下个工序是交换，则一定要靠交换位的天车才能来提取
-       
-        #x1,x2,L,R=self.get_crane_bound(crane)
-        # #print(crane,x1,x2,L,R)
-        # if L!=None :
-        #     if abs(crane.x-L.x)<=SHARE.MIN_AGENT_SAFE_DISTANCE+1:
-        #         masks[Actions.left]=0
-        #         if L.carrying!=None:
-        #             masks[Actions.right]=1 #给载物天车的让路
-        # elif crane.x-eps<x1:
-        #         masks[Actions.left]=0
-        # if R!=None :
-        #     if abs(R.x-crane.x)<=SHARE.MIN_AGENT_SAFE_DISTANCE+1:
-        #         masks[Actions.right]=0
-        #         if R.carrying!=None:
-        #             masks[Actions.left]=1 #给载物天车的让路
 
-        # elif crane.x+eps>x2:
-        #         masks[Actions.right]=0
+
                 
     def mask2str(self,masks):
         flags=[]
@@ -410,20 +441,9 @@ class World:
         return ''.join(flags)
 
     def get_masks(self,crane:Crane):
-        masks = np.zeros(5, dtype=np.int8)
-        masks[Actions.stay]=1
-        if self._limit_only_top(crane,masks):
-            #if crane.cfg.name=='H1':print('only top',masks)
-            return masks
-        if self._limit_only_bottom(crane,masks):
-            #if crane.cfg.name=='H1':print('only bottom')
-            return masks
-        self._limit_allow_move(crane,masks)
-        #if crane.cfg.name=='H1':print('allow_move',masks)
-        self._check_disable(crane,masks)
+        masks = np.ones(5, dtype=np.int8)
+        self._disable_bad(crane,masks)
         self.masks[crane.cfg.name]=masks
-        #if crane.cfg.name=='H1':print('limit_disable',masks)
-        
         return masks
 
 
@@ -567,8 +587,6 @@ class World:
         x=crane.x
         y=crane.y
         x1,x2=self.group_limits[crane.cfg.group]
-
-
         return x<x1 or y<0 or x>x2 or y>self.max_y
     
     def _round(self,x:float)->int:
@@ -589,7 +607,37 @@ class World:
             for c in cs:
                 print(f'{c}')
 
+'''
+    def _limit_only_top(self,crane:Crane,masks:np.ndarray)->bool:
+        rt=False
+        if 1<=crane.y<SHARE.MAX_Y and crane.carrying!=None:
+            masks[Actions.top]=1
+            rt=True
+        return rt
 
+    def _limit_only_bottom(self,crane:Crane,masks:np.ndarray)->bool:
+        rt=False
+        if 0<crane.y<SHARE.MAX_Y and crane.carrying is None:
+            masks[Actions.bottom]=1
+            rt=True
+        return rt
+    
+    def _limit_allow_move(self,crane:Crane,masks:np.ndarray):
+        eps=SHARE.EPS
+        x1,x2,*_=self.get_crane_bound(crane)
+        xs=[]
+        for x in range(x1,x2+1):
+            if x not in self.pos_slots: 
+                continue
+            xs.append((abs(x-crane.x),x))
+        xs.sort(key=lambda p:p[0])
+        xs=list(map(lambda p:p[1],xs))
+
+        wp:Workpiece=crane.carrying
+
+
+
+'''
 
 
 

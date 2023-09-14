@@ -29,14 +29,14 @@ class WorldObj:
         pos=self._x
         if self.attached!=None:
             pos=self.attached.x
-        return pos  
+        return int(pos +0.5)
        
     @property
     def y(self):
         pos=self._y
         if self.attached!=None:
             pos=self.attached.y
-        return pos 
+        return int(pos +0.5) 
         
     def reset(self):
         self._x=self.init_x

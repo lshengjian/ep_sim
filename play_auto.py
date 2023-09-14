@@ -9,7 +9,7 @@ def main(cfg: "DictConfig"):  # noqa: F821
    policy=MaskSelect(env)  
    #policy=RandomSelect(env) 
    observations, infos = env.reset(seed=123)
-   for k in range(1000):
+   for k in range(2000):
       actions=policy.decision(observations,infos)
       observations, rewards, terminateds, truncateds, infos = env.step(actions)
       if k==10:

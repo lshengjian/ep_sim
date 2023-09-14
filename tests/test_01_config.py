@@ -23,7 +23,7 @@ def test_build():
     ops_map,slots,cranes,procs=build_config('demo')
     assert ops_map[101].name=='上料'
     assert str(slots[0]) =='[1] 上料 1|2'
-    assert str(cranes[0])=='[1] H1 3 (1.0,1.0)'
+    assert str(cranes[0])=='[1] H11 3 (1.0,1.0)'
     assert str(procs[0]) =='[A] 上料 0->0'
 
 

@@ -39,7 +39,7 @@ def test_slot_with_product_state():
     wd=World()
     wd.reset()
     wd.add_jobs(['B']*3)
-    stat_slot=wd.pos_slots[2]
+    stat_slot=wd.pos_slots[1]
     #wp:Workpiece=stat_slot.carrying
     data=stat_slot.state2data()
     size=SHARE.OBJ_TYPE_SIZE+SHARE.OP_TYPE1_SIZE+SHARE.OP_TYPE2_SIZE+SHARE.PRODUCT_TYPE_SIZE+4
@@ -61,7 +61,7 @@ def test_slot_with_product_state():
 
     start+=SHARE.PRODUCT_TYPE_SIZE
     d=data[start:start+2]
-    assert d.tolist()==[0.02,0.5]
+    assert d.tolist()==[0.01,0.5]
 
     start+=2
     d=data[start:start+2]

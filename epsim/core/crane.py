@@ -42,8 +42,8 @@ class Crane(WorldObj):
         if self.action==Actions.stay:
             return
         dir=DIR_TO_VEC[self.action]
-        self._x=self.x+dir[0]*self.cfg.speed_x
-        self._y=self.y+dir[1]*self.cfg.speed_y
+        self._x=self._x+dir[0]*self.cfg.speed_x
+        self._y=self._y+dir[1]*self.cfg.speed_y
         # self._y=np.clip(self._y,0,2)
         self.action=Actions.stay
 
