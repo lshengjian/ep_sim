@@ -1,0 +1,4 @@
+product_code,op_key,time_min,time_max
+A,上料,0,0
+A,水洗,60,63
+A,下料,0,0

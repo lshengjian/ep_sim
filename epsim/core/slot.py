@@ -77,14 +77,15 @@ class Slot(WorldObj):#缓存及加工位
 
 
     def step(self):
-        self.left=9999
+        #self.left=9999
+        self.timer+=1
         if self.carrying is None or  self.cfg.op_key<SHARE.MIN_OP_KEY:
             return
-        wp:Workpiece=self.carrying
-        self.timer+=1
-        op:OpLimitData=wp.target_op_limit
-        op_time=(wp.target_op_limit.min_time+wp.target_op_limit.max_time)//2
-        self.left=op_time-self.timer
+        # wp:Workpiece=self.carrying
+        
+        # op:OpLimitData=wp.target_op_limit
+        # op_time=(wp.target_op_limit.min_time+wp.target_op_limit.max_time)//2
+        # self.left=op_time-self.timer
 
 
 

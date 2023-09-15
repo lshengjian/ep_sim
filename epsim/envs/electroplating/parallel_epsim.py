@@ -43,19 +43,21 @@ class parallel_env(ParallelEnv):
     def __init__(self, render_mode=None,args: "DictConfig"  = None):
         self.args=args
         Renderer.LANG=args.language
+        SHARE.LOG_LEVEL=args.log_level
         SHARE.TILE_SIZE=args.tile_size
         SHARE.SHORT_ALARM_TIME=args.alarm.short_time
         SHARE.LONG_ALARM_TIME=args.alarm.long_time
         SHARE.AUTO_DISPATCH=args.auto_dispatch
         SHARE.OBSERVATION_IMAGE=args.observation_image
-        self.world=World(args.config_directory,SHARE.AUTO_DISPATCH)
+        self.world=World(args.data_directory,SHARE.AUTO_DISPATCH)
 
 
         ncols=args.screen_columns
         max_x=max(list(self.world.pos_slots.keys()))
         SHARE.MAX_X=max_x
         
-        nrows=int(max_x/ncols+0.5)+1
+        nrows=max_x//ncols+2
+
         self.renderer=Renderer(self.world,args.fps,nrows,ncols)
         
         self.possible_agents = [crane.cfg.name for crane in self.world.all_cranes]
@@ -118,8 +120,9 @@ class parallel_env(ParallelEnv):
 
     def _make_jobs(self):
         ps=[]
-        for p in self.args.products:
+        for p in self.args.products[self.args.data_directory]:
             ps.extend([p.code]*p.num)
+        #print(ps)
         self.world.add_jobs(ps)
         for agv in self.world.all_cranes:
             agv.color=Color(255,255,255)
@@ -155,7 +158,9 @@ class parallel_env(ParallelEnv):
                 observations[agv.cfg.name]=self.world.get_observation_img(agv)
             else:
                 observations[agv.cfg.name]=self.world.get_observation(agv)
-            infos[agv.cfg.name]={"action_masks":self.world.get_masks(agv)}
+            mask=self.world.get_masks(agv)
+            
+            infos[agv.cfg.name]={"action_masks":mask}
         self.observations = observations
         self.infos = infos
         # for name,obs,mask in zip(infos.keys(),observations.values(),infos.values()):

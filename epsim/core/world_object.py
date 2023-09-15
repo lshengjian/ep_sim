@@ -54,7 +54,7 @@ class WorldObj:
         pass
     def __str__(self):
         flag='[W]' if self.carrying!=None else '  '
-        return f'{flag} ({self.x:.1f},{self.y:.1f})'
+        return f'({self.x:.1f},{self.y:.1f}){flag} '
     
     def state2data(self):
         ds=self.state

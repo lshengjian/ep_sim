@@ -27,6 +27,8 @@ class SHARE:
     AUTO_DISPATCH:bool=False
     OBSERVATION_IMAGE:bool=False
 
+    LOG_LEVEL:str='info' #debug,error
+
 
 
 WINDOW_TITLE={

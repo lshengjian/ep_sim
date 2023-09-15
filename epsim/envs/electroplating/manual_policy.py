@@ -47,7 +47,7 @@ class ManualControl:
         save_img(obs[key],'outputs/'+key+'.jpg')
         dones=list(terminateds.values())
         if dones[0]:
-            print("game over!")
+            #print("game over!")
             self.reset()
 
 
