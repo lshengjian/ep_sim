@@ -10,6 +10,7 @@ from .constants import Actions
 from .crane import Crane
 from .slot import Slot
 from .workpiece import Workpiece
+from .dispatch import Dispatch
 from .config import build_config
 from epsim.utils import get_state,get_observation # for image
 import logging
@@ -73,6 +74,7 @@ class World:
         self.max_steps=1000
         self.masks={}
         self.load_config()
+        self.dispatch:Dispatch=Dispatch(self)
     
     @property
     def  cur_crane(self):
@@ -229,15 +231,20 @@ class World:
     def get_crane_bound(self,crane:Crane)->Tuple[Slot|Crane,Slot|Crane]:
         g=crane.cfg.group
         x1,x2=map(int, self.group_limits[g])
-        s1=self.pos_slots[x1]
-        s2=self.pos_slots[x2]
+        left=None
+        right=None
         l_side=list(filter(lambda agv:agv.x<crane.x, self.group_cranes[g]))
         r_side=list(filter(lambda agv:agv.x>crane.x, self.group_cranes[g]))
         l_side.sort(key=lambda c:c.x,reverse=True)
         r_side.sort(key=lambda c:c.x)
-        left=s1 if len(l_side)<1 else l_side[0]
-        right=s2 if len(r_side)<1 else r_side[0]
-        return left,right
+        if len(l_side)>0:
+            left=l_side[0]
+            x1=left.x+SHARE.MIN_AGENT_SAFE_DISTANCE+1
+
+        if len(r_side)>0:
+            right=r_side[0]
+            x2=right.x-SHARE.MIN_AGENT_SAFE_DISTANCE-1
+        return x1,x2,left,right
             
     # def get_group_bound(self,group=1):
     #     return self.group_limits[group]
@@ -252,6 +259,12 @@ class World:
                 #print('products2starts')
                 self.plan_next(wp)
                 s.put_in(wp)
+                wp.start_tick=self.step_count
+                wp.end_tick=9999 #todo
+                t=0
+                for limit in self.product_procs[ps[0]]:
+                    t+=limit.duration
+                wp.total_op_time=t
                 ps.remove(ps[0])
                 break
         self.products=ps
@@ -302,146 +315,9 @@ class World:
             self.group_cranes[cfg.group].append(crane)
         self.max_x: int = max(list(self.pos_slots.keys()))
  
-    def _limit_only_up(self,crane:Crane,masks:np.ndarray)->bool:
-        rt=False
-        if 0<crane.y<SHARE.MAX_Y and crane.carrying!=None:
-            masks[Actions.top]=1
-            rt=True
-        return rt
-
-    def _limit_only_down(self,crane:Crane,masks:np.ndarray)->bool:
-        rt=False
-        if 0<crane.y<SHARE.MAX_Y and crane.carrying is None:
-            masks[Actions.bottom]=1
-            rt=True
-        return rt
     
 
         
-    def _should_move(self, crane, masks,left,right):
-        eps=SHARE.EPS
-        wp:Workpiece=crane.carrying
-        cs1=[]
-        cs2=[]
-       
-        can_go=set()
-        for x in range(left.x,right.x+1):
-            slot=self.pos_slots.get(x,None)
-            if slot is None:continue
-            wp2:Workpiece=slot.carrying
-            if wp != None:
-                if wp2 is None  and wp.target_op_limit.op_key==slot.cfg.op_key and crane.y<eps: #天车载物，加工槽空闲
-                    if slot.x>crane.x:
-                        can_go.add(Actions.right)
-                        #print('天车载物,右边可放')
-                        
-                    elif slot.x<crane.x:
-                        can_go.add(Actions.left)
-                        #print('天车载物,左边可放')
-            else:
-                if wp2!=None and slot.timer>wp2.target_op_limit.duration-10:
-                    if slot.cfg.op_key>SHARE.MIN_OP_KEY:
-                        cs1.append(slot)
-                    else:
-                        cs2.append(slot)
-        cs1.extend(cs2)
-        for  slot in cs1:
-            if slot.x>crane.x:
-                can_go.add(Actions.right)
-                #print('天车空,右边需要处理')
-                if slot.carrying!=None :
-                    if type(right) is Crane and right.carrying is None:
-                        break
-                else:
-                    can_go.add(Actions.right)
-            elif slot.x<crane.x:
-                can_go.add(Actions.left)
-                #print('天车空,左边需要处理')
-                if slot.carrying!=None :
-                    
-                    if type(left) is Crane and left.carrying is None:
-                        break
- 
-
-
-        rt=False
-        if Actions.left in can_go :
-            masks[Actions.left]=1
-            rt=True
-        if Actions.right in can_go:
-            masks[Actions.right]=1
-            rt=True
-        return rt
-
-          
-
-
-
-
-    def _not_out_bound(self, crane, masks,left,right):
-        eps=SHARE.EPS
-        if crane.y<eps:
-            masks[Actions.top]=0
-        elif crane.y>(self.max_y-eps):
-            masks[Actions.bottom]=0
-        if eps<crane.y<(self.max_y-eps):
-            masks[Actions.left]=0
-            masks[Actions.right]=0
-        
-        safe_dis=SHARE.MIN_AGENT_SAFE_DISTANCE+1
-
-        if type(left) is Crane :
-            if crane.x<=left.x+safe_dis:
-                masks[Actions.left]=0
-        elif crane.x==left.x:
-            masks[Actions.left]=0
-        
-        if type(right) is Crane :
-            if crane.x>=right.x-safe_dis:
-                masks[Actions.right]=0
-        elif crane.x==right.x:
-            masks[Actions.right]=0
-
-    def _should_down(self, crane, masks):
-        eps=SHARE.EPS
-        wp=crane.carrying
-        slot=self.pos_slots.get(crane.x,None)
-        wp2=None if slot is None else slot.carrying
-        if  crane.y<eps :
-            candown=wp != None and slot!=None and wp2 ==None and wp.target_op_limit.op_key==slot.cfg.op_key 
-            if  candown:
-                masks[Actions.bottom]=1
-                return True
-        return False
-
-
-    def _should_up(self, crane:Crane, masks,left,right):
-        eps=SHARE.EPS
-        wp=crane.carrying
-
-        if crane.y<self.max_y or wp!=None:
-            return
-
-        slot=self.pos_slots.get(crane.x,None)
-        wp2=None if slot is None else slot.carrying
-        if wp!=None or wp2 is None: #空天车在空槽不能上行
-            return
-
-        found=False
-        op_limit:OpLimitData=self._get_next_op_limit(wp2)
-        for x in range(left.x,right.x+1):
-           s=self.pos_slots.get(x,None)
-           wp=None if s is None else s.carrying
-           if s!=None and wp is None and s.cfg.op_key==op_limit.op_key:
-               found=True
-               break
-        if found and slot.timer>wp2.target_op_limit.duration   :
-            masks[Actions.top]=1
-            if slot.cfg.op_key<SHARE.MIN_OP_KEY:
-                masks[Actions.stay]=1
-            return True
-        return False
-
 
            
         
@@ -469,34 +345,9 @@ class World:
         return ''.join(flags)
 
     def get_masks(self,crane:Crane):
-        masks = np.zeros(5, dtype=np.int8)
-        
-        if self._limit_only_up(crane,masks) or self._limit_only_down(crane,masks):
-            self.masks[crane.cfg.name]=masks
-            return masks
+        self.dispatch.decision()
+        return self.masks[crane.cfg.id]
 
-        left,right=self.get_crane_bound(crane)
-        if self._should_up(crane,masks,left,right):
-            self.masks[crane.cfg.name]=masks
-            #self._not_out_bound(crane,masks,left,right)
-            return masks
-        if self._should_down(crane,masks):
-            self.masks[crane.cfg.name]=masks
-            return masks
-        if self._should_move(crane,masks,left,right):
-            self._not_out_bound(crane,masks,left,right)
-            self.masks[crane.cfg.name]=masks
-            if sum(masks)<1:
-                masks[Actions.stay]=1
-            return masks
-
-        masks = np.ones(5, dtype=np.int8)
-        masks[Actions.top]=0
-        masks[Actions.bottom]=0
-        self._not_out_bound(crane,masks,left,right)
-        self.masks[crane.cfg.name]=masks
-        #print('random walk')
-        return masks
 
 
     

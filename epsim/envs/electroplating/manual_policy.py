@@ -88,7 +88,7 @@ class ManualControl:
             action = key_to_action[key]
             carne=self.env.world.cur_crane
             #print('action_masks',self.env.infos[carne.cfg.name]['action_masks'])
-            if  self.env.infos[carne.cfg.name]['action_masks'][action]:
+            if  self.env.world.masks[carne.cfg.id][action]:
                 actions[carne.cfg.name]=action
         self.step(actions)
         

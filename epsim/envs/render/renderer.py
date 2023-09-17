@@ -56,11 +56,15 @@ class Renderer:
         #xs=list(map(lambda c:int(c.x+0.5) , self.world.all_cranes))
         self._surface.fill((0,0,0))
         left=(len(self.world.products)+0.2)*SHARE.TILE_SIZE
+        
         key=self.world.cur_crane.cfg.name
         self.show_text(pygame,f'R:{self.world.rewards[key]} S:{self.world.score} T:{self.world.step_count}',
                        left,SHARE.TILE_SIZE//3,SHARE.TILE_SIZE,True,(155,34,237))
-        if key in self.world.masks:
-            flags=self.world.mask2str(self.world.masks[key])
+        
+        id=self.world.cur_crane.cfg.id
+        if id in self.world.masks:
+            
+            flags=self.world.mask2str(self.world.masks[id])
             self.show_text(pygame,f'{flags}',left,SHARE.TILE_SIZE+20,SHARE.TILE_SIZE//2,False,(55,234,137))
         self._draw_products(pygame)
         merges=[]
