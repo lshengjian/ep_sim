@@ -20,18 +20,75 @@ class Dispatch:
             cranes_bound[agv.cfg.id]=self.world.get_crane_bound(agv)
             self.world.masks[agv.cfg.id]=np.ones(5,dtype=np.uint8)
 
-
-
         for agv in self.world.all_cranes:
             if self.check_updown(agv):
                 continue
             bound=cranes_bound[agv.cfg.id]
             #self.check_slots(agv,bound)
-            self.check_safe(agv,bound)
+            self.check_bound(agv,bound)
+            self.disable_move(agv,bound)
 
-            
+    def disable_move(self,crane:Crane,bound:Tuple[int,int,Crane,Crane] ):
+        eps=SHARE.EPS
+        wp:Workpiece=crane.carrying
+        slot=self.world.pos_slots.get(crane.x,None)
+        
+        
+        masks=self.world.masks[crane.cfg.id]
+        wp2:Workpiece=None if slot is None else slot.carrying
+        if  crane.y<eps and slot != None :
+            if wp!=None and ( wp.target_op_limit.op_key != slot.cfg.op_key or wp2!=None):
+                masks[Actions.bottom]=0 #不是携带工件的下个处理槽或者 槽位已经有物品
+                
+        if wp2 is None  and not (0<crane.y<self.world.max_y):
+            masks[Actions.top]=0
+        
+        slots=self.get_focus_slots(crane,bound)
+        if len(slots)<1:return
+        dir=set()
+        for s in slots:
+            if s.x<crane.x:
+                dir.add(Actions.left)
+            elif s.x>crane.x:
+                dir.add(Actions.right)
+        
+        if not (Actions.left in dir) and np.random.random()<0.999: #有一定几率让出当前位置
+            masks[Actions.left]=0
+        if not (Actions.right in dir) and np.random.random()<0.999:
+            masks[Actions.right]=0
 
-    def check_safe(self, crane:Crane,bound:Tuple[int,int,Crane,Crane] ):
+        x1,x2,left,right=bound
+        if wp2 is None:
+            return
+        next_slot=self.have_next_slot( wp2,x1, x2)
+        if next_slot is None   :
+            print(f'{crane}cant see {slot} next')
+            masks[Actions.top]=0
+        elif slot.timer<wp2.target_op_limit.min_time  :
+            print(f'time: {slot.timer} <{wp2.target_op_limit.min_time}')
+            masks[Actions.top]=0
+        
+        # all_empty=True
+        # for x in range(x1,crane.x):
+        #     s=self.world.pos_slots.get(x,None)
+        #     if s!=None  and s.carrying!=None:
+        #         all_empty=False
+        #         break
+        # if all_empty and next_slot!=None:
+        #     masks[Actions.left]=0
+
+        # all_empty=True
+        # for x in range(crane.x+1,x2+1):
+        #     s=self.world.pos_slots.get(x,None)
+        #     if s!=None and s.carrying!=None:
+        #         all_empty=False
+        #         break
+        # if all_empty and next_slot!=None:
+        #     masks[Actions.right]=0
+
+    
+
+    def check_bound(self, crane:Crane,bound:Tuple[int,int,Crane,Crane] ):
         x1,x2,left,right=bound
         eps=SHARE.EPS
         masks=self.world.masks[crane.cfg.id]
@@ -48,37 +105,21 @@ class Dispatch:
         if crane.x>=x2:
             masks[Actions.right]=0
         
-        wp:Workpiece=crane.carrying
-        slot=self.world.pos_slots.get(crane.x,None)
-        wp2:Workpiece=None if slot is None else slot.carrying
         
-        if slot is None :
+        slot=self.world.pos_slots.get(crane.x,None)
+        if slot is None : #没有槽位
             masks[Actions.bottom]=0
             masks[Actions.top]=0
             return
-        if  crane.y<eps :
-            if wp!=None and ( wp.target_op_limit.op_key != slot.cfg.op_key or wp2!=None):
-                masks[Actions.bottom]=0
-                return
-        if crane.y<self.world.max_y:
-            return
-        
-        if wp2 is None :
-            masks[Actions.top]=0
-            return
 
-        if not self.have_next_slot( wp2,x1, x2)  :
-            masks[Actions.top]=0
-        elif slot.timer<wp2.target_op_limit.min_time   :
-            masks[Actions.top]=0
 
     def have_next_slot(self,  wp,x1, x2):
-        found=False
+        found=None
         op_limit:OpLimitData=self.world._get_next_op_limit(wp)
         for x in range(x1,x2+1):
             s=self.world.pos_slots.get(x,None)
             if s!=None and s.carrying is None and s.cfg.op_key==op_limit.op_key:
-                found=True
+                found=s
                 break
         return found
 
@@ -94,27 +135,31 @@ class Dispatch:
             return True
         return False
 
-    def get_slots(self,crane:Crane,isFree:bool):
+    def get_focus_slots(self,crane:Crane,bound:Tuple[int,int,Crane,Crane]):
+        x1,x2,*_=bound
         cs1=[]
         cs2=[]
 
         for slot in self.world.group_slots[crane.cfg.group]:
+            if slot.x<x1 or slot.x>x2:continue
             wp2:Workpiece=slot.carrying
             wp:Workpiece=crane.carrying
-            if isFree:
-                if wp2 is None:
-                    if  wp.target_op_limit.op_key==slot.cfg.op_key and crane.y<SHARE.EPS: #天车载物，加工槽空闲
-                        cs1.append(slot)
-                    
-                        #print('天车载物,左边可放')
-            else:
-                if wp2 != None:
-                    if slot.cfg.op_key>SHARE.MIN_OP_KEY and slot.timer>wp.target_op_limit.duration-10:
-                        cs1.append(slot)
-                    else:
-                        cs2.append(slot)
+            dis=abs(slot.x-crane.x)
+            if crane.y<SHARE.EPS and wp !=None: #天车载物，
+                if wp2 is None and wp.target_op_limit.op_key==slot.cfg.op_key: # 加工槽空闲且是目标位置
+                    cs1.append((dis,slot))
+            elif crane.y>(self.world.max_y-SHARE.EPS) and wp is None and wp2 != None:
+               if slot.cfg.op_key>SHARE.MIN_OP_KEY and (slot.timer+dis/crane.cfg.speed_x>=wp2.target_op_limit.min_time):
+                    cs1.append((dis,slot))
+               else:
+                    cs2.append((dis,slot))
+        cs1.sort(key=lambda d:d[0])
+        cs2.sort(key=lambda d:d[0])
         cs1.extend(cs2)
-        return filter(lambda slot:crane.cfg.group==slot.cfg.group and slot.carrying==None if isFree else slot.carrying!=None ,self.world.all_cranes)
+        if len(cs1)<1:
+            return []
+        return list(map(lambda d:d[1] ,cs1))
+        
     
     def check_slots(self,crane:Crane,bound:Tuple[int,int,Crane,Crane] ):
         pass
