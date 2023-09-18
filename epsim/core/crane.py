@@ -12,6 +12,7 @@ class Crane(WorldObj):
         self.timer:int=0
         self.action:Actions=Actions.stay
         self.last_action:Actions=Actions.stay
+        self.force=0 #受力情况
         super().__init__(x)
     
     @property

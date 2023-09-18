@@ -1,4 +1,8 @@
 product_code,op_key,time_min,time_max
 A,上料,0,0
+A,除油,60,70
 A,水洗,20,40
 A,下料,0,0
+B,上料,0,0
+B,水洗,20,40
+B,下料,0,0

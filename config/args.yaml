@@ -1,5 +1,6 @@
 language: chinese  #english  or chinese
 log_level: error #debug,info,error
+max_steps: 3000
 auto_dispatch: true
 observation_image: false
 data_directory: test03
@@ -12,6 +13,11 @@ products:
   test01:
     - code: A
       num: 3
+  test02:
+    - code: A
+      num: 2
+    - code: B
+      num: 2
   test03:
     - code: A
       num: 3

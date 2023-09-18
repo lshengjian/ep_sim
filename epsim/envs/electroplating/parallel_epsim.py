@@ -49,7 +49,7 @@ class parallel_env(ParallelEnv):
         SHARE.LONG_ALARM_TIME=args.alarm.long_time
         SHARE.AUTO_DISPATCH=args.auto_dispatch
         SHARE.OBSERVATION_IMAGE=args.observation_image
-        self.world=World(args.data_directory,SHARE.AUTO_DISPATCH)
+        self.world=World(args.data_directory,args.max_steps,SHARE.AUTO_DISPATCH)
 
 
         ncols=args.screen_columns

@@ -150,7 +150,7 @@ def main(cfg: "DictConfig"):  # noqa: F821
     env_fn = electroplating_v1
 
     env_kwargs = {'args':cfg}
-    train_action_mask(env_fn, steps=50000, seed=123, **env_kwargs)
+    #train_action_mask(env_fn, steps=1000000, seed=123, **env_kwargs)
     eval_action_mask(env_fn, num_games=100,render_mode='human', **env_kwargs)
 
 

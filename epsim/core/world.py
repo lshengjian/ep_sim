@@ -47,7 +47,7 @@ get_observations()
 4) 天车相撞 游戏结束
 '''
 class World:
-    def __init__(self,config_directory='test01',auto_dispatch=False):
+    def __init__(self,config_directory='test01',max_steps=3000,auto_dispatch=False):
         
         self.config_directory=config_directory
         self.enableAutoPut=auto_dispatch
@@ -71,7 +71,7 @@ class World:
         self.prd_idx=0
         self.cur_crane_index=0
         self.state=None
-        self.max_steps=1000
+        self.max_steps=max_steps
         self.masks={}
         self.load_config()
         self.dispatch:Dispatch=Dispatch(self)
@@ -96,12 +96,7 @@ class World:
         if self.cur_prd_code is None:
             return
         self.products2starts()
-        # wp=Workpiece.make_new(self.cur_prd_code)
-        # self.plan_next(wp)
-        # start=self.get_free_slot(1,wp)
-        # if start is None:
-        #     return
-        # start.put_in(wp)
+
 
     def shift_product(self):
         cur_prd_code=None if len(self.products)<1 else self.products[0]
@@ -158,9 +153,23 @@ class World:
                 if s.carrying is None:
                     have_empty=True
                     break
-            if have_empty and len(self.products)>0 and  np.random.random()<0.001:
-                self.products2starts()
+            doing_jobs=self.num_jobs_in_first_group()
+            if have_empty and len(self.products)>0 and doing_jobs<len(self.group_cranes[1]):
+                if np.random.random()<0.8:
+                    self.products2starts()
+
+                
     
+    def num_jobs_in_first_group(self):
+        rt=0
+        for s in self.group_slots[1]:
+            if s.carrying != None:
+                rt+=1
+        for c in self.group_cranes[1]:
+            if c.carrying != None:
+                rt+=1
+        return rt
+
     def get_state_img(self,scrern_img:np.ndarray,nrows,ncols): #仿真系统的全部状态数据
         self.state= get_state(scrern_img,nrows,ncols,SHARE.TILE_SIZE)
         return self.state
@@ -510,12 +519,7 @@ class World:
             for c in cs:
                 print(f'{c}')
 
-'''
 
-
-
-
-'''
 
 
 
