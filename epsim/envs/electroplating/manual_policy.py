@@ -13,7 +13,7 @@ class ManualControl:
         self.env = env
         self.running = True
         #self.cur_crane_idx=0
-        self.info={'action_mask':[1]*5}
+        #self.info={'action_mask':[1]*5}
 
     def start(self):
         self.reset()
@@ -35,18 +35,17 @@ class ManualControl:
 
     def reset(self):
         obs, self.infos = self.env.reset(seed=123)
-        self.env.world.shift_product()
         self.env.render()
         #print(obs['H11'].shape)
         
 
     def step(self, actions):
         obs, rewards, terminateds, truncateds,self.infos = self.env.step(actions)
-        key=self.env.world.cur_crane.cfg.name
+        #key=self.env.world.cur_crane.cfg.name
         #print(obs[key].shape)
-        save_img(obs[key],'outputs/'+key+'.jpg')
-        dones=list(terminateds.values())
-        if dones[0]:
+        #save_img(obs[key],'outputs/'+key+'.jpg')
+        dones=list(terminateds.values())+list(truncateds.values())
+        if any(dones):
             #print("game over!")
             self.reset()
 
@@ -63,29 +62,30 @@ class ManualControl:
         if key == "backspace":
             self.reset()
             return
-        if key == "left shift":
-            self.env.world.shift_product()
-            return
         if key == "left ctrl":
-            #print('next_crane')
             self.env.world.next_crane()
-            return
-        if key == "space":
-            self.env.world.put_product()
-            self.env.render()
-            return
 
-        key_to_action = {
+
+        key_to_action1 = {
+            "left shift": DispatchAction.NEXT_PRODUCT_TYPE,
+            "space": DispatchAction.SELECT_CUR_PRODUCT,
+
+        }
+        key_to_action2 = {
             "left": CraneAction.left,
             "right": CraneAction.right,
             "down": CraneAction.bottom , 
             "up": CraneAction.top,
         }
-        actions={}#np.zeros(len(self.env.world.all_cranes),dtype=np.uint8)
+        actions={SHARE.DISPATCH_CODE:DispatchAction.NOOP}
+        if key in key_to_action1:
+            actions[SHARE.DISPATCH_CODE]=key_to_action1[key]
+
+
         for carne in self.env.world.all_cranes:
             actions[carne.cfg.name]=CraneAction.stay
-        if key in key_to_action.keys():
-            action = key_to_action[key]
+        if key in key_to_action2:
+            action = key_to_action2[key]
             carne=self.env.world.cur_crane
             #print('action_masks',self.env.infos[carne.cfg.name]['action_masks'])
             if  self.env.world.masks[carne.cfg.id][action]:

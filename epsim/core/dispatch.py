@@ -85,18 +85,10 @@ class CraneDispatch:
             wp2:Workpiece=s.carrying
             if wp2!=None :
                 if s.cfg.op_key>SHARE.MIN_OP_KEY:
-                    k=(wp2.target_op_limit.duration-s.timer)/(wp2.target_op_limit.duration)
-                    if k<0:
-                        k=0
-                    k+=0.9
+                    k=60*(s.timer/wp2.target_op_limit.duration)**2
                 else:
-                    k=2.1
-            crane.force+=dir/((dis*k)**2)
-        # for agv in self.world.group_cranes[crane.cfg.group]:
-        #     if agv == crane:continue
-        #     dis=crane.x-agv.x
-        #     dir=dis/abs(dis)
-        #     crane.force+=dir/abs(dis)
+                    k=0.5
+            crane.force+=k*dir/abs(dis)
         if crane.force>0:
             masks[CraneAction.right]=1
         elif crane.force<0:
@@ -176,24 +168,16 @@ class CraneDispatch:
             if slot.x<x1 or slot.x>x2 or slot.x == crane.x :continue
             wp:Workpiece=crane.carrying
             wp2:Workpiece=slot.carrying
-            
-            dis=abs(slot.x-crane.x)
             if crane.y<SHARE.EPS and wp !=None: #天车载物，
                 if wp2 is None and wp.target_op_limit.op_key==slot.cfg.op_key: # 加工槽空闲且是目标位置
-                    todos.append((dis,slot))
+                    todos.append(slot)
             elif crane.y>(self.world.max_y-SHARE.EPS) and wp is None and wp2 != None:
                next_slot=self.next_slot( wp2,x1, x2)
                if next_slot is None: continue
-               todos.append((dis,slot))
-            #    if slot.cfg.op_key>SHARE.MIN_OP_KEY and (slot.timer+dis/crane.cfg.speed_x>=wp2.target_op_limit.min_time):
-
-            #         todos.append((dis,slot))
-            #    else:
-            #         todos.append((dis*3,slot)) #缓存位优先级低，相当于放到很远处
-        #todos.sort(key=lambda d:d[0])
+               todos.append(slot)
         if len(todos)<1:
             return []
-        return list(map(lambda d:d[1] ,todos))
+        return todos
         
   
 

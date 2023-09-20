@@ -4,6 +4,7 @@ import numpy as np
 from enum import IntEnum
 
 class SHARE:
+    DISPATCH_CODE:str='DP'
     START_KEY:int=101
     SWAP_KEY:int=102
     END_KEY:int=103

@@ -33,7 +33,7 @@ class MyEnv(Env):
         SHARE.TILE_SIZE=args.tile_size
         SHARE.SHORT_ALARM_TIME=args.alarm.short_time
         SHARE.LONG_ALARM_TIME=args.alarm.long_time
-        #SHARE.AUTO_DISPATCH=args.auto_dispatch
+
         SHARE.OBSERVATION_IMAGE=args.observation_image
         self.world=World(args.data_directory,args.max_steps,args.auto_put_starts,args.auto_dispatch_crane)
 
@@ -48,18 +48,16 @@ class MyEnv(Env):
         self.render_mode = render_mode
         self.action_space=spaces.Discrete(3)
         self.observation_space=spaces.Box(-1,1,(SHARE.MAX_STATE_LIST_LEN*self.one_observation_size,),dtype=np.float32)
+        if SHARE.OBSERVATION_IMAGE:
+            tsize=SHARE.TILE_SIZE
+            self.observation_space=spaces.Box(0,255,(3*tsize,SHARE.MAX_STATE_LIST_LEN*tsize,3),dtype=np.uint8) #todo
 
-    # def next_crane(self):
-    #     for c in self.world.all_cranes:
-    #         c.color=Color(255,255,255)
-    #     self.world.next_crane()
-    #     self.world.cur_crane.color=Color(255,0,0)
+
 
     def _make_jobs(self):
         ps=[]
         for p in self.args.products[self.args.data_directory]:
             ps.extend([p.code]*p.num)
-        #print(ps)
         self.world.add_jobs(ps)
 
     def _get_name_by_id(self,id):
@@ -83,7 +81,7 @@ class MyEnv(Env):
             self.world.get_masks(agv)
     
     def step(self, a:DispatchAction):
-        self.world._reward=0 
+
         self.world.do_dispatch(a)
         if self.world.auto_dispatch_crane:
             actions=self._decision()
@@ -94,6 +92,8 @@ class MyEnv(Env):
             self.render()
         obs=self.world.get_state().ravel()
         self._make_mask()
+        if SHARE.OBSERVATION_IMAGE:
+            obs=self.world.get_state_img(self.screen_img,self.renderer.nrows,self.renderer.ncols)
         return obs,self.world.reward, self.world.is_over, self.world.is_timeout, {}
 
 
@@ -106,9 +106,12 @@ class MyEnv(Env):
         super().reset(seed=seed)
         self.world.reset()
         self._make_jobs()
+        obs=self.world.get_state().ravel()
         if self.render_mode!=None and self.render_mode!='ansi':
             self.render()
-        obs=self.world.get_state().ravel()
+        if SHARE.OBSERVATION_IMAGE:
+            obs=self.world.get_state_img(self.screen_img,self.renderer.nrows,self.renderer.ncols)
+
         self._make_mask()
         return obs, {}
 

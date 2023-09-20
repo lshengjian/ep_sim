@@ -30,6 +30,7 @@ class ManualControl:
 
     def reset(self):
         obs, info = self.env.reset()
+        self.env.render()
 
         
 

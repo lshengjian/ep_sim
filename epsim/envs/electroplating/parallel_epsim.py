@@ -47,9 +47,9 @@ class parallel_env(ParallelEnv):
         SHARE.TILE_SIZE=args.tile_size
         SHARE.SHORT_ALARM_TIME=args.alarm.short_time
         SHARE.LONG_ALARM_TIME=args.alarm.long_time
-        SHARE.AUTO_DISPATCH=args.auto_dispatch
+        #SHARE.AUTO_DISPATCH=args.auto_dispatch
         SHARE.OBSERVATION_IMAGE=args.observation_image
-        self.world=World(args.data_directory,args.max_steps,SHARE.AUTO_DISPATCH)
+        self.world=World(args.data_directory,args.max_steps,args.auto_put_starts,args.auto_dispatch_crane)
 
 
         ncols=args.screen_columns
@@ -59,46 +59,44 @@ class parallel_env(ParallelEnv):
         nrows=max_x//ncols+2
 
         self.renderer=Renderer(self.world,args.fps,nrows,ncols)
+        self.possible_agents=[SHARE.DISPATCH_CODE]
         
-        self.possible_agents = [crane.cfg.name for crane in self.world.all_cranes]
+        self.possible_agents.extend([crane.cfg.name for crane in self.world.all_cranes])
 
         # optional: a mapping between agent name and ID
         self.agent_name_mapping = dict(
-            zip(self.possible_agents, list(range(len(self.world.all_cranes))))
+            zip(self.possible_agents, list(range(len(self.possible_agents))))
         )
         self.render_mode = render_mode
 
-    # Observation space should be defined here.
-    # lru_cache allows observation and action spaces to be memoized, reducing clock cycles required to get each agent's space.
-    # If your spaces change over time, remove this line (disable caching).
     
     @property 
     def one_observation_size(self):
         return SHARE.OBJ_TYPE_SIZE+SHARE.OP_TYPE1_SIZE+SHARE.OP_TYPE2_SIZE+SHARE.PRODUCT_TYPE_SIZE+4
+    
     @functools.lru_cache(maxsize=None)
     def observation_space(self, agent):#todo  dispatch see all obs
-        rt={'observation':None,'image':None}
-        if SHARE.OBSERVATION_IMAGE:
-            tsize=SHARE.TILE_SIZE
-            rt['image']=Box(0,255,(3*tsize,(2*SHARE.MAX_AGENT_SEE_DISTANCE+1 )*tsize,3),dtype=np.uint8)
+        rt=None
+        tsize=SHARE.TILE_SIZE
+        if agent==SHARE.DISPATCH_CODE:
+            if SHARE.OBSERVATION_IMAGE:
+                rt=Box(0,255,(3*tsize,SHARE.MAX_STATE_LIST_LEN*tsize,3),dtype=np.uint8)
+            else:
+                rt=Box(-1,1,(SHARE.MAX_STATE_LIST_LEN*self.one_observation_size,),dtype=np.float32)
         else:
-            rt['observation']=Box(-1,1,(SHARE.MAX_OBS_LIST_LEN*self.one_observation_size,),dtype=np.float32)
-
-        
-        # gymnasium spaces are defined and documented here: https://gymnasium.farama.org/api/spaces/
+            obs_len=SHARE.MAX_OBS_LIST_LEN
+            if SHARE.OBSERVATION_IMAGE:
+                rt=Box(0,255,(3*tsize,obs_len*tsize,3),dtype=np.uint8)
+            else:
+                rt=Box(-1,1,(obs_len*self.one_observation_size,),dtype=np.float32)
         return rt
 
     # Action space should be defined here.
     # If your spaces change over time, remove this line (disable caching).
     @functools.lru_cache(maxsize=None)
     def action_space(self, agent):
-        return Discrete(5)
+        return Discrete(3) if  agent==SHARE.DISPATCH_CODE else  Discrete(5)
     
-    # def get_state(self):# todo
-    #     return self.state
-    
-    # def get_observations(self):
-    #     return get_observation(self.machines_img,self.world.cur_crane.x,13) 
 
     def render(self):
         if self.render_mode is None:
@@ -153,6 +151,11 @@ class parallel_env(ParallelEnv):
         observations = {}#agent: NONE for agent in self.agents}
         infos = {}#agent: {} for agent in self.agents}
 
+        observations[SHARE.DISPATCH_CODE]=self.world.get_state()
+        if SHARE.OBSERVATION_IMAGE:
+            observations[SHARE.DISPATCH_CODE]=self.world.get_state_img()
+        infos[SHARE.DISPATCH_CODE]={}
+
         for idx,agv in enumerate(self.world.all_cranes):
             if SHARE.OBSERVATION_IMAGE:
                 observations[agv.cfg.name]=self.world.get_observation_img(agv)
@@ -186,9 +189,16 @@ class parallel_env(ParallelEnv):
         #     idx=self.agent_name_mapping[k]
         #     acts[idx]=v
 
-        acts=list(actions.values())
+        act=0
+        acts=[0]*len(self.world.all_cranes)
+        for key,action in actions.items():
+            if key==SHARE.DISPATCH_CODE:
+                act=action
+            else:
+                idx=self.agent_name_mapping[key]-1
+                acts[idx]=action
 
-        
+        self.world.do_dispatch(act)
         self.world.set_crane_commands(acts)
 
         self.world.update()
@@ -203,7 +213,7 @@ class parallel_env(ParallelEnv):
         
 
         terminations = {agent: self.world.is_over for agent in self.agents}
-        truncations = {agent: False for agent in self.agents}
+        truncations = {agent: self.world.is_timeout for agent in self.agents}
         observations, infos = self._make_info()
 
         # if self.world.is_over:
