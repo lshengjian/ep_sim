@@ -1,5 +1,4 @@
 language: chinese  #english  or chinese
-log_level: error #debug,info,error
 max_steps: 3000
 auto_put_starts: true
 auto_dispatch_crane: true

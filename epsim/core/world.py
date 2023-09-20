@@ -14,7 +14,7 @@ from .dispatch import CraneDispatch
 from .config import build_config
 from epsim.utils import get_state,get_observation # for image
 import logging
-logger = logging.getLogger(__name__)
+logger = logging.getLogger(__name__.split('.')[-1])
 '''
 外部接口
 1) 加入一批物料
@@ -259,11 +259,11 @@ class World:
         r_side.sort(key=lambda c:c.x)
         if len(l_side)>0:
             left=l_side[0]
-            x1=left.x+SHARE.MIN_AGENT_SAFE_DISTANCE+1
+            x1=left.x+1+SHARE.MIN_AGENT_SAFE_DISTANCE
 
         if len(r_side)>0:
             right=r_side[0]
-            x2=right.x-SHARE.MIN_AGENT_SAFE_DISTANCE-1
+            x2=right.x-1-SHARE.MIN_AGENT_SAFE_DISTANCE
         return x1,x2,left,right
 
 

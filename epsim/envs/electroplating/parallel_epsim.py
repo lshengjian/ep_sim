@@ -43,11 +43,9 @@ class parallel_env(ParallelEnv):
     def __init__(self, render_mode=None,args: "DictConfig"  = None):
         self.args=args
         Renderer.LANG=args.language
-        SHARE.LOG_LEVEL=args.log_level
         SHARE.TILE_SIZE=args.tile_size
         SHARE.SHORT_ALARM_TIME=args.alarm.short_time
         SHARE.LONG_ALARM_TIME=args.alarm.long_time
-        #SHARE.AUTO_DISPATCH=args.auto_dispatch
         SHARE.OBSERVATION_IMAGE=args.observation_image
         self.world=World(args.data_directory,args.max_steps,args.auto_put_starts,args.auto_dispatch_crane)
 

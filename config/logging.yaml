@@ -1,0 +1,35 @@
+version: 1
+disable_existing_loggers: False
+
+formatters:
+  brief: 
+    format: '%(name)s - %(levelname)s - %(message)s'
+  precise: 
+    format: '%(asctime)s - %(name)s %(levelname)s - %(message)s'
+
+handlers:
+  console:
+    class : logging.StreamHandler
+    formatter: brief
+    level   : INFO
+    stream  : ext://sys.stdout
+  file:
+    class : logging.handlers.RotatingFileHandler
+    formatter: precise
+    filename: ./outputs/epsim.log
+    encoding: utf-8
+    maxBytes: 1024
+    backupCount: 3
+
+loggers:
+    config:
+        level: INFO
+        handlers: [file]
+        propagate: no 
+    world:
+        level: INFO
+        handlers: [file,console]
+        propagate: no 
+root:
+    level: ERROR
+    handlers: [console]

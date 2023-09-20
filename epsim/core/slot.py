@@ -7,7 +7,7 @@ from .rendering import set_color,blend_imgs
 from .workpiece import Workpiece
 
 import logging
-logger = logging.getLogger(__name__)
+logger = logging.getLogger(__name__.split('.')[-1])
 
 class Slot(WorldObj):#缓存及加工位
 
@@ -44,7 +44,7 @@ class Slot(WorldObj):#缓存及加工位
             return
         self.timer=0
         #print(f'put {wp} to {self}')
-        #logger.info(f'put {wp} to {self}')
+        logger.info(f'put {wp} to {self}')
         wp.attached=self
         self.carrying=wp
         self.locked=True

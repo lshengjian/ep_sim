@@ -7,16 +7,22 @@ from epsim.core.componets import *
 
 __all__=['split_field','build_config','get_files','get_file_info']
 import logging
-LOG_DICT={
-    'debug':logging.DEBUG,
-    'info':logging.INFO,
-    'error':logging.ERROR,
-}
-logging.basicConfig(filename='outputs/epsim.log',format='%(name)s - %(levelname)s - %(message)s', encoding='utf-8', level=LOG_DICT[SHARE.LOG_LEVEL])
+import logging.config
+import yaml
+
+logger=None
+#logging.config.fileConfig('config/logging.yaml')
+
+'''
+# LOG_DICT={
+#     'debug':logging.DEBUG,
+#     'info':logging.INFO,
+#     'error':logging.ERROR,
+# }
+# logging.basicConfig(filename='outputs/epsim.log',format='%(name)s - %(levelname)s - %(message)s', encoding='utf-8', level=LOG_DICT[SHARE.LOG_LEVEL])
 
 #,format='%(asctime)s - %(levelname)s - %(message)s', encoding='utf-8', level=logging.DEBUG)
-logger = logging.getLogger(__name__)
-'''
+
 import colorlog
 handler = colorlog.StreamHandler()
 handler.setFormatter(colorlog.ColoredFormatter(
@@ -119,7 +125,11 @@ def _make_one(fn:str,op_name2key=None):
     return name,rt
 
 def build_config(data_directory:str='test01')->Tuple:#->Tuple[|,Dict[str,List[Index]]
-    
+    global logger
+    with open(file="config/logging.yaml", mode='r', encoding="utf-8") as file:
+        logging_yaml = yaml.load(stream=file, Loader=yaml.FullLoader)
+        logging.config.dictConfig(config=logging_yaml)
+        logger = logging.getLogger(__name__.split('.')[-1])
     ds:Dict[str,List[Index]]={}
     fs=get_files(data_directory)
     op_name2key={}

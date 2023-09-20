@@ -5,7 +5,7 @@ from .rendering import set_color,blend_imgs
 from .componets import CraneData,State
 from .workpiece import Workpiece
 import logging
-logger = logging.getLogger(__name__)
+logger = logging.getLogger(__name__.split('.')[-1])
 class Crane(WorldObj):
     def __init__(self,  x:int,cfg:CraneData):
         self.cfg:CraneData=cfg
@@ -51,7 +51,7 @@ class Crane(WorldObj):
     def put_in(self,wp:Workpiece):
         if wp is None:
             return
-        #logger.info(f'put {wp} to {self}')
+        logger.info(f'put {wp} to {self}')
         #print(f'put {wp} to {self}')
         wp.attached=self
         self.carrying=wp

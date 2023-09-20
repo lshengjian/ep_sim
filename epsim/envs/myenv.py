@@ -29,7 +29,7 @@ class MyEnv(Env):
         self.args=args
         MyEnv.metadata['render_fps']=args.fps
         Renderer.LANG=args.language
-        SHARE.LOG_LEVEL=args.log_level
+
         SHARE.TILE_SIZE=args.tile_size
         SHARE.SHORT_ALARM_TIME=args.alarm.short_time
         SHARE.LONG_ALARM_TIME=args.alarm.long_time
