@@ -47,8 +47,9 @@ class Workpiece(WorldObj):
     @property
     def state(self)->State:
         op_limit=self.target_op_limit
-        assert op_limit!=None
-        return State(ObjType.Workpiece,op_limit.op_key,self.product_code,self.x ,self.y,op_limit.duration)
+        op_key=0 if  op_limit is None else op_limit.op_key
+        duration=0 if  op_limit is None else op_limit.duration
+        return State(ObjType.Workpiece,op_key,self.product_code,self.x ,self.y,duration)
         
     @staticmethod
     def make_new(code='A',x=0):

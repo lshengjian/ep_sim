@@ -57,8 +57,8 @@ class Renderer:
         self._surface.fill((0,0,0))
         left=(len(self.world.products)+0.2)*SHARE.TILE_SIZE
         
-        key=self.world.cur_crane.cfg.name
-        self.show_text(pygame,f'R:{self.world.rewards[key]} S:{self.world.score} T:{self.world.step_count}',
+        #key=self.world.cur_crane.cfg.name
+        self.show_text(pygame,f'R:{self.world.reward} S:{self.world.score} T:{self.world.step_count}',
                        left,SHARE.TILE_SIZE//3,SHARE.TILE_SIZE,True,(155,34,237))
         
         id=self.world.cur_crane.cfg.id

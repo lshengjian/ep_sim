@@ -3,7 +3,7 @@ from os import path
 
 dir=path.abspath(path.dirname(__file__) + './..')
 sys.path.append(dir)
-from epsim.core import build_config,World,Workpiece,Actions,SHARE
+from epsim.core import build_config,World,Workpiece,CraneAction,SHARE
 
 def test_slot_no_product_state():
     wd=World()

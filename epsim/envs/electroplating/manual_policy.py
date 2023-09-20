@@ -76,14 +76,14 @@ class ManualControl:
             return
 
         key_to_action = {
-            "left": Actions.left,
-            "right": Actions.right,
-            "down": Actions.bottom , 
-            "up": Actions.top,
+            "left": CraneAction.left,
+            "right": CraneAction.right,
+            "down": CraneAction.bottom , 
+            "up": CraneAction.top,
         }
         actions={}#np.zeros(len(self.env.world.all_cranes),dtype=np.uint8)
         for carne in self.env.world.all_cranes:
-            actions[carne.cfg.name]=Actions.stay
+            actions[carne.cfg.name]=CraneAction.stay
         if key in key_to_action.keys():
             action = key_to_action[key]
             carne=self.env.world.cur_crane

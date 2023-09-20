@@ -10,8 +10,8 @@ class Crane(WorldObj):
     def __init__(self,  x:int,cfg:CraneData):
         self.cfg:CraneData=cfg
         self.timer:int=0
-        self.action:Actions=Actions.stay
-        self.last_action:Actions=Actions.stay
+        self.action:CraneAction=CraneAction.stay
+        self.last_action:CraneAction=CraneAction.stay
         self.force=0 #受力情况
         super().__init__(x)
     
@@ -32,21 +32,21 @@ class Crane(WorldObj):
         super().reset()
         self._y=2.0
         self.timer=0
-        self.action=Actions.stay
-        self.last_action=Actions.stay
+        self.action=CraneAction.stay
+        self.last_action=CraneAction.stay
 
-    def set_command(self,act:Actions):
+    def set_command(self,act:CraneAction):
         self.action=act
         self.last_action=act
 
     def step(self):
-        if self.action==Actions.stay:
+        if self.action==CraneAction.stay:
             return
         dir=DIR_TO_VEC[self.action]
         self._x=self._x+dir[0]*self.cfg.speed_x
         self._y=self._y+dir[1]*self.cfg.speed_y
         # self._y=np.clip(self._y,0,2)
-        self.action=Actions.stay
+        self.action=CraneAction.stay
 
     def put_in(self,wp:Workpiece):
         if wp is None:

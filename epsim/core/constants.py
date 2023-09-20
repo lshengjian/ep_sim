@@ -17,6 +17,7 @@ class SHARE:
     MAX_Y:int=2
     MAX_AGENT_SEE_DISTANCE:int=7
     MAX_OBS_LIST_LEN:int=2*MAX_AGENT_SEE_DISTANCE+1+2
+    MAX_STATE_LIST_LEN:int=50
     MIN_AGENT_SAFE_DISTANCE:int=2
     TILE_SIZE:int=48
 
@@ -24,7 +25,7 @@ class SHARE:
     LONG_ALARM_TIME:int=20
 
     EPS:float=1e-4
-    AUTO_DISPATCH:bool=False
+    #AUTO_DISPATCH:bool=False
     OBSERVATION_IMAGE:bool=False
 
     LOG_LEVEL:str='info' #debug,error
@@ -32,8 +33,8 @@ class SHARE:
 
 
 WINDOW_TITLE={
-    'chinese':'电镀仿真器 | 换天车(left ctrl),换产品(left shift),移动(→,↑,←,↓)',
-    'english':'Electroplating simulator | Change the overhead crane (left ctrl), change the product (left shift), move (→,↑,←,↓)', 
+    'chinese':'电镀仿真器 | 换天车(left ctrl),换产品(left shift),选产品(space),移动(→,↑,←,↓)',
+    'english':'Electroplating simulator | Change the overhead crane (left ctrl), change the product (left shift),select product(space), move (→,↑,←,↓)', 
 }
 
 class ObjType(IntEnum): 
@@ -41,6 +42,11 @@ class ObjType(IntEnum):
     Crane = 1
     Slot = 2 
     Workpiece =3
+    
+class DispatchAction(IntEnum): 
+    NOOP = 0
+    NEXT_PRODUCT_TYPE = 1
+    SELECT_CUR_PRODUCT = 2 
     
 
 '''
@@ -52,7 +58,7 @@ o-------->  x
 ↓ y 
 bottom
 '''
-class Actions(IntEnum): 
+class CraneAction(IntEnum): 
     stay = 0
     right = 1
     top = 2 # to top

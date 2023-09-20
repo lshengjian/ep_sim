@@ -6,11 +6,11 @@ from collections import defaultdict
 from .constants import *
 from .componets import *
 from .world_object import  *
-from .constants import Actions
+from .constants import CraneAction
 from .crane import Crane
 from .slot import Slot
 from .workpiece import Workpiece
-from .dispatch import Dispatch
+from .dispatch import CraneDispatch
 from .config import build_config
 from epsim.utils import get_state,get_observation # for image
 import logging
@@ -47,13 +47,16 @@ get_observations()
 4) 天车相撞 游戏结束
 '''
 class World:
-    def __init__(self,config_directory='test01',max_steps=3000,auto_dispatch=False):
+    def __init__(self,config_directory='test01',max_steps=3000,auto_put_starts=False,auto_dispatch_crane=False):
         
         self.config_directory=config_directory
-        self.enableAutoPut=auto_dispatch
+        self.auto_put_starts=auto_put_starts
+        self.auto_dispatch_crane=auto_dispatch_crane
         self.is_over=False
         self.todo_cnt=0
-        self.rewards={}
+        self._rewards={}
+        self._reward=0
+        self.is_timeout=False
         self.score=0
         self.step_count=0
         self.ops_dict:Dict[int,OperateData]=None
@@ -74,8 +77,12 @@ class World:
         self.max_steps=max_steps
         self.masks={}
         self.load_config()
-        self.dispatch:Dispatch=Dispatch(self)
-    
+        self.dispatch:CraneDispatch=CraneDispatch(self)
+
+    @property
+    def  reward(self):
+        return self._reward+sum(self._rewards.values())
+
     @property
     def  cur_crane(self):
         return self.all_cranes[self.cur_crane_index]
@@ -83,8 +90,10 @@ class World:
     def add_jobs(self,ps:List[str]=[]):
         self.products.extend(ps)
         self.todo_cnt+=len(ps)
+        if len(self.products)>0:
+            self.cur_prd_code=self.products[0]
         #print('add_jobs')
-        if self.enableAutoPut:self.products2starts()
+        if self.auto_put_starts:self.products2starts()
 
     def next_crane(self):
         for c in self.all_cranes:
@@ -94,6 +103,7 @@ class World:
         
     def put_product(self):
         if self.cur_prd_code is None:
+            self._reward+=-1
             return
         self.products2starts()
 
@@ -116,26 +126,31 @@ class World:
         self.products=buff2
         self.cur_prd_code=buff2[0]
         
-    def set_command(self,action:Actions):
-        crane=self.all_cranes[self.cur_crane_index]
-        crane.set_command(action)
+    def do_dispatch(self,action:DispatchAction):
+        if action==DispatchAction.NEXT_PRODUCT_TYPE:
+            self.shift_product()
+        elif action==DispatchAction.SELECT_CUR_PRODUCT:
+            self.put_product()
+        
 
-    def set_commands(self,actions:List[Actions]):
+    def set_crane_commands(self,actions:List[CraneAction]):
         assert len(actions)==len(self.all_cranes)
         for i,crane in enumerate(self.all_cranes):
             crane.set_command(actions[i])
     
     def update(self):
-        if self.is_over:
+        if self.is_over or self.is_timeout:
             return
         self.step_count+=1
+
         if self.step_count>self.max_steps:
-            self.is_over=True
+            self.is_timeout=True
             return
 
-
+        old=self._reward
+        
         for crane in self.all_cranes:
-            self.rewards[crane.cfg.name]=0
+            self._rewards[crane.cfg.name]=0
             crane.step()
 
         slots=self.pos_slots.values()
@@ -143,20 +158,19 @@ class World:
             slot.step()
         self._check_cranes()
         self._check_slots()
-        self.score+=sum(self.rewards.values())
         if self.todo_cnt<1:
             self.is_over=True
+            self._reward+=100
             logger.info("!!!OK!!!")
-        elif self.enableAutoPut:
-            have_empty=False
-            for s in self.starts:
-                if s.carrying is None:
-                    have_empty=True
-                    break
-            doing_jobs=self.num_jobs_in_first_group()
-            if have_empty and len(self.products)>0 and doing_jobs<len(self.group_cranes[1]):
-                if np.random.random()<0.8:
-                    self.products2starts()
+        elif self.auto_put_starts:
+            #print(self.todo_cnt)
+            self.products2starts()
+        self._reward+=old
+        self.score+=self.reward
+
+
+
+                    
 
                 
     
@@ -181,11 +195,13 @@ class World:
         rt=[]
         for crane in self.all_cranes:
             rt.append(crane.state2data())
-        for slot in self.pos_slots.values:
+        for slot in self.pos_slots.values():
             rt.append(slot.state2data()) 
         for pcode in self.products:
             wp=Workpiece.make_new(pcode)
             rt.append(wp.state2data())
+        for k in range(len(rt),SHARE.MAX_STATE_LIST_LEN):
+            rt.append([0.]*len(rt[0]))
         return np.array(rt,dtype=np.float32)
     
     def get_observation(self,agv:Crane):
@@ -235,7 +251,9 @@ class World:
             slot.reset()
         Workpiece.UID.clear()
         for crane in self.all_cranes:
-            self.rewards[crane.cfg.name]=0
+            self._rewards[crane.cfg.name]=0
+        self._reward=0
+        self.is_timeout=False
         
     def get_crane_bound(self,crane:Crane)->Tuple[Slot|Crane,Slot|Crane]:
         g=crane.cfg.group
@@ -260,10 +278,29 @@ class World:
     
     def products2starts(self):
         ps=self.products[:]
+        if len(ps)<1:
+            self._reward-=1
+            return
+
+        have_empty=False
+        for s in self.starts:
+            if s.carrying is None:
+                have_empty=True
+                break
+        if not have_empty:
+            self._reward-=1
+            return
+        doing_jobs=self.num_jobs_in_first_group()
+
+        if  doing_jobs>len(self.group_cranes[1]):
+            self._reward-=1
+            return
+        if self.auto_put_starts and np.random.random()<0.99:
+            return
         
         for s in self.starts:
             #print(s)
-            if not s.locked and len(ps)>0:
+            if  len(ps)>0  and s.carrying is None:
                 wp:Workpiece=Workpiece.make_new(ps[0],s.x)
                 #print('products2starts')
                 self.plan_next(wp)
@@ -323,13 +360,7 @@ class World:
             self.all_cranes.append(crane)
             self.group_cranes[cfg.group].append(crane)
         self.max_x: int = max(list(self.pos_slots.keys()))
- 
-    
-
-        
-
-           
-        
+     
 
 
     def _get_next_op_limit(self,wp:Workpiece):
@@ -397,7 +428,7 @@ class World:
         wp,reward=source.take_out()
         if type(target) is Slot: 
             if target in self.ends:
-                self.rewards[source.cfg.name]+=10
+                self._rewards[source.cfg.name]+=10
                 self.todo_cnt-=1
                 del wp
                 return 
@@ -406,13 +437,13 @@ class World:
                 target=self.pos_slots[x]
         if target.carrying!=None:
             logger.info(f'{target} already have {target.carrying}')
-            self.rewards[source.cfg.name]-=5
+            self._rewards[source.cfg.name]-=5
             self.is_over=True
             return 
 
         target.put_in(wp)
         if type(target) is Crane:
-            self.rewards[target.cfg.name]=reward
+            self._rewards[target.cfg.name]=reward
             self.plan_next(wp)
         # if source in self.starts and self.enableAutoPut and np.random.random()<0.001:
         #     self.products2starts()
@@ -430,13 +461,13 @@ class World:
         slot=self.pos_slots.get(pos,None)
         if slot!=None and abs(crane.y-1)<0.1:
             wp:Workpiece=crane.carrying
-            if wp==None and crane.last_action==Actions.top and slot.carrying!=None:
+            if wp==None and crane.last_action==CraneAction.top and slot.carrying!=None:
                 self._translate(slot,crane)
                 
-            if wp!=None and crane.last_action==Actions.bottom  :
+            if wp!=None and crane.last_action==CraneAction.bottom  :
                 if wp.target_op_limit.op_key!=slot.cfg.op_key:
                     logger.info(f'{wp.target_op_limit.op_key} not same as {slot.cfg.op_key}')
-                    self.rewards[crane.cfg.name]-=5
+                    self._rewards[crane.cfg.name]-=5
                     self.is_over=True
                     return
                 self._translate(crane,slot)
@@ -449,10 +480,10 @@ class World:
             if abs(c.x-crane.x)<SHARE.MIN_AGENT_SAFE_DISTANCE:
                 collide=True
                 logger.error(f'{c} too close to {crane}')
-                if c.last_action!=Actions.stay:
-                    self.rewards[c.cfg.name]-=5
-                if crane.last_action!=Actions.stay:
-                    self.rewards[crane.cfg.name]-=5
+                if c.last_action!=CraneAction.stay:
+                    self._rewards[c.cfg.name]-=5
+                if crane.last_action!=CraneAction.stay:
+                    self._rewards[crane.cfg.name]-=5
                 break
 
         return collide
@@ -477,7 +508,7 @@ class World:
                 if len(agvs)>0:
                     agvs.sort(key=lambda x:x[0])
                     agv=agvs[0][1]  #最近的空闲天车失职！
-                    self.rewards[agv.cfg.name]-=5
+                    self._rewards[agv.cfg.name]-=5
                     
 
                 break  
@@ -486,7 +517,7 @@ class World:
         for c in self.all_cranes:
             if  self._out_bound(c):
                 logger.error(f'{c} out  bount!')
-                self.rewards[c.cfg.name]-=5
+                self._rewards[c.cfg.name]-=5
                 self.is_over=True
                 
                 return

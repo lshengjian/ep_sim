@@ -6,7 +6,7 @@ from gymnasium.spaces import Discrete,Box
 from pettingzoo import ParallelEnv
 from pettingzoo.utils import parallel_to_aec, wrappers
 from ..render.renderer import Renderer
-from epsim.core import World,WorldObj,Slot,Crane,Actions,SHARE
+from epsim.core import World,WorldObj,Slot,Crane,CraneAction,SHARE
 from epsim.core.componets import Color
 from epsim.core import SHARE
 
@@ -189,7 +189,7 @@ class parallel_env(ParallelEnv):
         acts=list(actions.values())
 
         
-        self.world.set_commands(acts)
+        self.world.set_crane_commands(acts)
 
         self.world.update()
         nrows=self.renderer.nrows
@@ -199,7 +199,7 @@ class parallel_env(ParallelEnv):
             self.world.get_state_img(screen_img,nrows,ncols)
 
         # rewards for all agents are placed in the rewards dictionary to be returned
-        rewards = self.world.rewards
+        rewards = self.world._rewards
         
 
         terminations = {agent: self.world.is_over for agent in self.agents}
