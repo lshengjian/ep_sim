@@ -81,7 +81,17 @@ class CraneDispatch:
         for s in slots:
             dis=s.x-crane.x
             dir=dis/abs(dis)
-            crane.force+=dir/(dis**2)
+            k=1
+            wp2:Workpiece=s.carrying
+            if wp2!=None :
+                if s.cfg.op_key>SHARE.MIN_OP_KEY:
+                    k=(wp2.target_op_limit.duration-s.timer)/(wp2.target_op_limit.duration)
+                    if k<0:
+                        k=0
+                    k+=0.9
+                else:
+                    k=2.1
+            crane.force+=dir/((dis*k)**2)
         # for agv in self.world.group_cranes[crane.cfg.group]:
         #     if agv == crane:continue
         #     dis=crane.x-agv.x
@@ -174,11 +184,13 @@ class CraneDispatch:
             elif crane.y>(self.world.max_y-SHARE.EPS) and wp is None and wp2 != None:
                next_slot=self.next_slot( wp2,x1, x2)
                if next_slot is None: continue
-               if slot.cfg.op_key>SHARE.MIN_OP_KEY and (slot.timer+dis/crane.cfg.speed_x>=wp2.target_op_limit.min_time):
-                    todos.append((dis,slot))
-               else:
-                    todos.append((dis*100,slot)) #缓存位优先级低，相当于放到很远处
-        todos.sort(key=lambda d:d[0])
+               todos.append((dis,slot))
+            #    if slot.cfg.op_key>SHARE.MIN_OP_KEY and (slot.timer+dis/crane.cfg.speed_x>=wp2.target_op_limit.min_time):
+
+            #         todos.append((dis,slot))
+            #    else:
+            #         todos.append((dis*3,slot)) #缓存位优先级低，相当于放到很远处
+        #todos.sort(key=lambda d:d[0])
         if len(todos)<1:
             return []
         return list(map(lambda d:d[1] ,todos))
