@@ -12,7 +12,7 @@ LOG_DICT={
     'info':logging.INFO,
     'error':logging.ERROR,
 }
-logging.basicConfig(filename='epsim.log',format='%(name)s - %(levelname)s - %(message)s', encoding='utf-8', level=LOG_DICT[SHARE.LOG_LEVEL])
+logging.basicConfig(filename='outputs/epsim.log',format='%(name)s - %(levelname)s - %(message)s', encoding='utf-8', level=LOG_DICT[SHARE.LOG_LEVEL])
 
 #,format='%(asctime)s - %(levelname)s - %(message)s', encoding='utf-8', level=logging.DEBUG)
 logger = logging.getLogger(__name__)
