@@ -17,8 +17,8 @@ def main(cfg: "DictConfig"):  # noqa: F821
     vec_env = make_vec_env(lambda :MyEnv(render_mode=None,args=cfg), n_envs=8)
 
     model = PPO("MlpPolicy", vec_env, verbose=1,policy_kwargs=dict(net_arch=[256, 256, 256]),)
-    model.learn(total_timesteps=30000)
-    model.save("models/ppo2")
+    model.learn(total_timesteps=100000)
+    model.save("models/ppo")
 
     del model # remove to demonstrate saving and loading
 

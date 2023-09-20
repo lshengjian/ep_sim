@@ -15,7 +15,7 @@ import hydra
 def main(cfg: "DictConfig"):  # noqa: F821
 
 
-    model = PPO.load("models/ppo2")
+    model = PPO.load("models/ppo")
     env=MyEnv(render_mode='human',args=cfg)
 
     
