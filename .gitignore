@@ -1,5 +1,7 @@
 # Byte-compiled / optimized / DLL files
 __pycache__/
+.pytest_cache/
+docs/
 data/
 outputs/
-.pytest_cache/
+

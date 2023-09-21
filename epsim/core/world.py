@@ -10,7 +10,7 @@ from .constants import CraneAction
 from .crane import Crane
 from .slot import Slot
 from .workpiece import Workpiece
-from .dispatch import CraneDispatch
+from .crane_helper import CraneHelper
 from .config import build_config
 from epsim.utils import get_state,get_observation # for image
 import logging
@@ -77,10 +77,17 @@ class World:
         self.cur_crane_index=0
         self.state=None
         self.max_steps=max_steps
-        self.masks={}
+        self._masks={} #key : DP;H11;H12..
         self.load_config()
-        self.dispatch:CraneDispatch=CraneDispatch(self)
+        self.dispatch:CraneHelper=CraneHelper(self)
 
+    @property
+    def  masks(self):
+        rt={}
+        for k,v in self._masks.items():
+            rt[k]={'action_masks':v}
+        return rt
+    
     @property
     def  reward(self):
         return sum(self._rewards.values())
@@ -115,7 +122,7 @@ class World:
         self.cur_prd_code=None if len(self.products)<1 else self.products[0]
         
         if self.cur_prd_code is None:
-            self._rewards[SHARE.DISPATCH_CODE]=-1
+            #self._rewards[SHARE.DISPATCH_CODE]=-1
             return 
         buff1=[]
         buff2=[]
@@ -139,11 +146,12 @@ class World:
             self.put_product()
         
 
-    def set_crane_commands(self,actions:List[CraneAction]):
+    def set_crane_commands(self,actions:Dict[str,CraneAction]):
         assert len(actions)==len(self.all_cranes)
         for i,crane in enumerate(self.all_cranes):
             self._rewards[crane.cfg.name]=0
-            crane.set_command(actions[i])
+            #print(actions)
+            crane.set_command(actions[crane.cfg.name])
 
             
     def update(self):
@@ -166,7 +174,7 @@ class World:
         if self.todo_cnt<1:
             self.is_over=True
             self._rewards[SHARE.DISPATCH_CODE]+=100
-            logger.info("!!!OK!!!")
+            logger.info("!!!GOOD JOB!!!")
         elif self.auto_put_starts:
             #print(self.todo_cnt)
             self.products2starts()
@@ -271,6 +279,8 @@ class World:
     def products2starts(self):
         ps=self.products[:]
         if len(ps)<1:
+            self._rewards[SHARE.DISPATCH_CODE]-=0.1
+            logger.error('no more products!')
             return
 
         have_empty=False
@@ -283,8 +293,9 @@ class World:
             return
         doing_jobs=self.num_jobs_in_first_group()
 
-        if  doing_jobs>int(len(self.group_cranes[1])*1.5+0.5):
-            self._rewards[SHARE.DISPATCH_CODE]-=1
+        if  doing_jobs>int(len(self.group_cranes[1])+1):
+            self._rewards[SHARE.DISPATCH_CODE]-=0.5
+            logger.error('Too much material to handle at the same time!')
             return
         if self.auto_put_starts and np.random.random()<0.99:
             return
@@ -371,15 +382,34 @@ class World:
                 
     def mask2str(self,masks):
         flags=[]
-        for i,m in enumerate(masks):
-            if m: flags.append(Directions[i])
+        for i,flag in enumerate(masks):
+            if flag: flags.append(Directions[i])
         return ''.join(flags)
 
     def get_masks(self,crane:Crane):
         self.dispatch.decision()
-        return self.masks[crane.cfg.id]
+       
+        #return self.masks[crane.cfg.name]
 
+    def get_dispatch_masks(self):
+        rt=np.ones(3,dtype=np.uint8)
+        
+        is_full=True
+        for s in self.starts:
+            if s.carrying is None:
+                is_full=False
+                break 
+        doing_jobs=self.num_jobs_in_first_group()
 
+        if is_full or doing_jobs>int(len(self.group_cranes[1])):
+            #print('is_full')
+            rt[DispatchAction.SELECT_CUR_PRODUCT]=0
+        if len(self.products)<1:
+            #print('no more products')
+            rt[DispatchAction.NEXT_PRODUCT_TYPE]=0
+            rt[DispatchAction.SELECT_CUR_PRODUCT]=0
+        self._masks[SHARE.DISPATCH_CODE]=rt
+        #return rt
 
     
 
@@ -427,7 +457,7 @@ class World:
                 x=target.x+1
                 target=self.pos_slots[x]
         if target.carrying!=None:
-            logger.info(f'{target} already have {target.carrying}')
+            logger.error(f'{target} already have {target.carrying}')
             self._rewards[source.cfg.name]-=5
             self.is_over=True
             return 
@@ -456,7 +486,7 @@ class World:
                 
             if wp!=None and crane.last_action==CraneAction.bottom  :
                 if wp.target_op_limit.op_key!=slot.cfg.op_key:
-                    logger.info(f'{wp.target_op_limit.op_key} not same as {slot.cfg.op_key}')
+                    logger.error(f'{wp.target_op_limit.op_key} not same as {slot.cfg.op_key}')
                     self._rewards[crane.cfg.name]-=5
                     self.is_over=True
                     return

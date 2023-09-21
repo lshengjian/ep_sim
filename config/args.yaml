@@ -1,6 +1,6 @@
 language: chinese  #english  or chinese
 max_steps: 3000
-auto_put_starts: true
+auto_put_starts: false
 auto_dispatch_crane: true
 observation_image: false
 data_directory: test03

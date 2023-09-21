@@ -34,7 +34,7 @@ class ManualControl:
         pygame.quit()
 
     def reset(self):
-        obs, self.infos = self.env.reset(seed=123)
+        obs, self.infos = self.env.reset()
         self.env.render()
         #print(obs['H11'].shape)
         
@@ -78,8 +78,11 @@ class ManualControl:
             "up": CraneAction.top,
         }
         actions={SHARE.DISPATCH_CODE:DispatchAction.NOOP}
-        if key in key_to_action1:
-            actions[SHARE.DISPATCH_CODE]=key_to_action1[key]
+        
+        if key in key_to_action1 :
+            action = key_to_action1[key]
+            if self.env.world._masks[SHARE.DISPATCH_CODE][action]>0 :
+                actions[SHARE.DISPATCH_CODE]=action
 
 
         for carne in self.env.world.all_cranes:
@@ -88,7 +91,7 @@ class ManualControl:
             action = key_to_action2[key]
             carne=self.env.world.cur_crane
             #print('action_masks',self.env.infos[carne.cfg.name]['action_masks'])
-            if  self.env.world.masks[carne.cfg.id][action]:
+            if  self.env.world._masks[carne.cfg.name][action]:
                 actions[carne.cfg.name]=action
         self.step(actions)
         

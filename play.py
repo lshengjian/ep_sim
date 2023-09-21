@@ -7,15 +7,14 @@ For more information about invalid action masking in SB3, see https://sb3-contri
 
 from epsim.envs.myenv import MyEnv
 import gymnasium as gym
-
-from stable_baselines3 import PPO
+from sb3_contrib.ppo_mask import MaskablePPO
 
 import hydra
 @hydra.main(config_path="./config", config_name="args", version_base="1.3")
 def main(cfg: "DictConfig"):  # noqa: F821
 
 
-    model = PPO.load("models/ppo")
+    model = MaskablePPO.load("models/ppo_mask")
     env=MyEnv(render_mode='human',args=cfg)
 
     

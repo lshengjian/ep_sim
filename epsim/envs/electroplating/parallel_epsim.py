@@ -147,26 +147,27 @@ class parallel_env(ParallelEnv):
 
     def _make_info(self):
         observations = {}#agent: NONE for agent in self.agents}
-        infos = {}#agent: {} for agent in self.agents}
+       
 
         observations[SHARE.DISPATCH_CODE]=self.world.get_state()
         if SHARE.OBSERVATION_IMAGE:
             observations[SHARE.DISPATCH_CODE]=self.world.get_state_img()
-        infos[SHARE.DISPATCH_CODE]={}
+
+        self.world.get_dispatch_masks()
 
         for idx,agv in enumerate(self.world.all_cranes):
             if SHARE.OBSERVATION_IMAGE:
                 observations[agv.cfg.name]=self.world.get_observation_img(agv)
             else:
                 observations[agv.cfg.name]=self.world.get_observation(agv)
-            mask=self.world.get_masks(agv)
+            self.world.get_masks(agv)
             
-            infos[agv.cfg.name]={"action_masks":mask}
+            #infos[agv.cfg.name]={"action_masks":mask}
         self.observations = observations
-        self.infos = infos
+        #self.infos = infos
         # for name,obs,mask in zip(infos.keys(),observations.values(),infos.values()):
         #     self.observations[name]={'observation':obs,'action_masks':mask}
-        return observations,infos
+        return observations,self.world.masks
 
     def step(self, actions:dict):
         """
@@ -188,13 +189,13 @@ class parallel_env(ParallelEnv):
         #     acts[idx]=v
 
         act=0
-        acts=[0]*len(self.world.all_cranes)
+        acts={}#[0]*len(self.world.all_cranes)
         for key,action in actions.items():
             if key==SHARE.DISPATCH_CODE:
                 act=action
             else:
-                idx=self.agent_name_mapping[key]-1
-                acts[idx]=action
+                #idx=self.agent_name_mapping[key]-1
+                acts[key]=action
 
         self.world.do_dispatch(act)
         self.world.set_crane_commands(acts)

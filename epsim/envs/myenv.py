@@ -65,26 +65,37 @@ class MyEnv(Env):
             if agv.id==id:
                 return agv.cfg.name
         return None
-    def _decision(self):
-        masks=self.world.masks
-        actions=[0]*len(self.world.all_cranes)
-        for idx,mask in enumerate(masks.values()):
-            if sum(mask)>1:
-                mask[CraneAction.stay]=0
-           
-            acts=np.argwhere(mask).ravel()
-            actions[idx]=random.choice(acts)
-        return actions       
+   
     
     def _make_mask(self):
+        self.world.get_dispatch_masks()
         for agv in self.world.all_cranes:
             self.world.get_masks(agv)
-    
+
+    def decision(self,infos:dict):
+        actions={}
+        for k,info in infos.items():
+            #print(k,info)
+            masks=info['action_masks']
+            if k==SHARE.DISPATCH_CODE:
+                continue
+            t=sum(masks)
+
+            if t>1:
+                masks[0]=0
+            elif t==0:
+                masks[0]=1
+                #print(k,masks.tolist())
+            
+            acts=np.argwhere(masks).ravel()
+            actions[k]=random.choice(acts)
+        return actions    
     def step(self, a:DispatchAction):
 
         self.world.do_dispatch(a)
         if self.world.auto_dispatch_crane:
-            actions=self._decision()
+            actions=self.decision(self.world.masks)
+            #actions=map(lambda k:self.m actions )
             self.world.set_crane_commands(actions)
         self.world.update()
 
@@ -94,7 +105,7 @@ class MyEnv(Env):
         self._make_mask()
         if SHARE.OBSERVATION_IMAGE:
             obs=self.world.get_state_img(self.screen_img,self.renderer.nrows,self.renderer.ncols)
-        return obs,self.world.reward, self.world.is_over, self.world.is_timeout, {}
+        return obs,self.world.reward, self.world.is_over, self.world.is_timeout, self.world.masks
 
 
     def reset(
@@ -113,7 +124,7 @@ class MyEnv(Env):
             obs=self.world.get_state_img(self.screen_img,self.renderer.nrows,self.renderer.ncols)
 
         self._make_mask()
-        return obs, {}
+        return obs,self.world.masks
 
 
 
