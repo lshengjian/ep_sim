@@ -31,7 +31,7 @@ pip install stable-baselines3[extra]
 python train.py
 ```
 
-### 使用强化学习控制任务调度
+### 使用PPO控制任务调度
 
 ``` python
 python play.py

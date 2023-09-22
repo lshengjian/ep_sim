@@ -55,8 +55,9 @@ class parallel_env(ParallelEnv):
         SHARE.MAX_X=max_x
         
         nrows=max_x//ncols+2
+        draw_text=render_mode in ['human', 'rgb_array']
 
-        self.renderer=Renderer(self.world,args.fps,nrows,ncols)
+        self.renderer=Renderer(self.world,args.fps,nrows,ncols,draw_text)
         self.possible_agents=[SHARE.DISPATCH_CODE]
         
         self.possible_agents.extend([crane.cfg.name for crane in self.world.all_cranes])
@@ -170,24 +171,6 @@ class parallel_env(ParallelEnv):
         return observations,self.world.masks
 
     def step(self, actions:dict):
-        """
-        step(action) takes in an action for each agent and should return the
-        - observations
-        - rewards
-        - terminations
-        - truncations
-        - infos
-        dicts where each dict looks like {agent_1: item_1, agent_2: item_2}
-        """
-        # If a user passes in actions with no agents, then just return empty observations, etc.
-        # if not actions:
-        #     self.agents = []
-        #     return {}, {}, {}, {}, {}
-        # acts=[0]*len(actions)
-        # for k,v in actions.items():
-        #     idx=self.agent_name_mapping[k]
-        #     acts[idx]=v
-
         act=0
         acts={}#[0]*len(self.world.all_cranes)
         for key,action in actions.items():

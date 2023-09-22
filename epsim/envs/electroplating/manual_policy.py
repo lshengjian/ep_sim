@@ -12,8 +12,6 @@ class ManualControl:
     ) -> None:
         self.env = env
         self.running = True
-        #self.cur_crane_idx=0
-        #self.info={'action_mask':[1]*5}
 
     def start(self):
         self.reset()

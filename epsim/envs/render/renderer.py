@@ -23,7 +23,7 @@ def make_surface(img,pygame):
 
 class Renderer:
     LANG:str='chinese'
-    def __init__(self,world:World,fps:int=4,nrows=3,ncols=17):
+    def __init__(self,world:World,fps:int=4,nrows=3,ncols=17,draw_text=False):
         self.world:World=world
         self.fps=fps
         self._surface = None
@@ -32,6 +32,7 @@ class Renderer:
         self.ncols=ncols
         tile_size=SHARE.TILE_SIZE
         self.window_size =  ncols*tile_size, tile_size*(nrows*3+1)
+        self.draw_text=draw_text
         # print(nrow,ncol)
         # print(self.window_size)
 
@@ -58,13 +59,13 @@ class Renderer:
         left=(len(self.world.products)+0.2)*SHARE.TILE_SIZE
         
         #key=self.world.cur_crane.cfg.name
-        self.show_text(pygame,f'R:{self.world.reward:.1f} S:{self.world.score:.1f} T:{self.world.step_count}',
+        if self.draw_text:
+            self.show_text(pygame,f'R:{self.world.reward:.1f} S:{self.world.score:.1f} T:{self.world.step_count}',
                        left,SHARE.TILE_SIZE//3,SHARE.TILE_SIZE,True,(155,34,237))
         
-        id=self.world.cur_crane.cfg.id
-        if id in self.world._masks:
-            
-            flags=self.world.mask2str(self.world._masks[id])
+        key=self.world.cur_crane.cfg.name
+        if self.draw_text and key in self.world._masks:
+            flags=self.world.mask2str(self.world._masks[key])
             self.show_text(pygame,f'{flags}',left,SHARE.TILE_SIZE+20,SHARE.TILE_SIZE//2,False,(55,234,137))
         self._draw_products(pygame)
         merges=[]

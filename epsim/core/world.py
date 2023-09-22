@@ -10,7 +10,7 @@ from .constants import CraneAction
 from .crane import Crane
 from .slot import Slot
 from .workpiece import Workpiece
-from .crane_helper import CraneHelper
+from .cranehelper import CraneHelper
 from .config import build_config
 from epsim.utils import get_state,get_observation # for image
 import logging
@@ -280,7 +280,7 @@ class World:
         ps=self.products[:]
         if len(ps)<1:
             self._rewards[SHARE.DISPATCH_CODE]-=0.1
-            logger.error('no more products!')
+            logger.error('no products!')
             return
 
         have_empty=False

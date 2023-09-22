@@ -43,8 +43,9 @@ class MyEnv(Env):
         SHARE.MAX_X=max_x
         
         nrows=max_x//ncols+2
+        draw_text=render_mode in ['human', 'rgb_array']
 
-        self.renderer=Renderer(self.world,args.fps,nrows,ncols)
+        self.renderer=Renderer(self.world,args.fps,nrows,ncols,draw_text)
         self.render_mode = render_mode
         self.action_space=spaces.Discrete(3)
         self.observation_space=spaces.Box(-1,1,(SHARE.MAX_STATE_LIST_LEN*self.one_observation_size,),dtype=np.float32)
