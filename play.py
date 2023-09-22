@@ -1,14 +1,8 @@
-"""Uses Stable-Baselines3 to train agents in the Connect Four environment using invalid action masking.
-
-For information about invalid action masking in PettingZoo, see https://pettingzoo.farama.org/api/aec/#action-masking
-For more information about invalid action masking in SB3, see https://sb3-contrib.readthedocs.io/en/master/modules/ppo_mask.html
-
-"""
-
 from epsim.envs.myenv import MyEnv
 import gymnasium as gym
 from sb3_contrib.ppo_mask import MaskablePPO
-
+from epsim.core import SHARE
+#from sb3_contrib.common.maskable.utils import get_action_masks
 import hydra
 @hydra.main(config_path="./config", config_name="args", version_base="1.3")
 def main(cfg: "DictConfig"):  # noqa: F821
@@ -20,7 +14,9 @@ def main(cfg: "DictConfig"):  # noqa: F821
     
     obs ,info= env.reset(seed=123)
     for _ in range(10000):
-        action, _states = model.predict(obs)
+        action_masks = env.world._masks[SHARE.DISPATCH_CODE]
+        #print(action_masks)
+        action, _states = model.predict(obs,action_masks=1-action_masks)
         obs, reward, done,truc, info = env.step(action)
         if done or truc:
             obs ,info= env.reset()

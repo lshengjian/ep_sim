@@ -12,9 +12,22 @@ class Crane(WorldObj):
         self.timer:int=0
         self.action:CraneAction=CraneAction.stay
         self.last_action:CraneAction=CraneAction.stay
-        self.force=0 #受力情况
+        self._forces:list=[0,0] #light,left
         super().__init__(x)
+
     
+    def resert_force(self):  
+        self._forces=[0,0]  
+    
+    
+    @property
+    def forces(self)->float:
+        return self._forces[0],self._forces[1]
+    
+    def add_force(self,val)->float:
+        idx=0 if  val>0 else 1
+        self._forces[idx]+=abs(val)
+
     @property
     def state(self)->State:
         wp:Workpiece=self.carrying

@@ -173,7 +173,7 @@ class World:
         self._check_slots()
         if self.todo_cnt<1:
             self.is_over=True
-            self._rewards[SHARE.DISPATCH_CODE]+=100
+            self._rewards[SHARE.DISPATCH_CODE]+=20
             logger.info("!!!GOOD JOB!!!")
         elif self.auto_put_starts:
             #print(self.todo_cnt)
@@ -195,7 +195,7 @@ class World:
         return self.state
     
     def get_observation_img(self,agv:Crane):
-        return  get_observation(self.state,agv.x,SHARE.MAX_AGENT_SEE_DISTANCE,SHARE.TILE_SIZE,SHARE.MAX_X)
+        return  get_observation(self.state,agv.x,SHARE.MAX_CRANE_SEE_DISTANCE,SHARE.TILE_SIZE,SHARE.MAX_X)
 
     def get_state(self): #仿真系统的全部状态数据
         rt=[]
@@ -221,7 +221,7 @@ class World:
         cs=[]
         for slot in self.group_slots[group]:
             dis=abs(slot.x-agv.x)
-            if dis<=SHARE.MAX_AGENT_SEE_DISTANCE:
+            if dis<=SHARE.MAX_CRANE_SEE_DISTANCE:
                 cs.append((dis,slot))
         if len(cs)>0:
             cs.sort(key=lambda x:x[0])
@@ -267,11 +267,11 @@ class World:
         r_side.sort(key=lambda c:c.x)
         if len(l_side)>0:
             left=l_side[0]
-            x1=left.x+1+SHARE.MIN_AGENT_SAFE_DISTANCE
+            x1=left.x+1+SHARE.MIN_CRANE_SAFE_DISTANCE
 
         if len(r_side)>0:
             right=r_side[0]
-            x2=right.x-1-SHARE.MIN_AGENT_SAFE_DISTANCE
+            x2=right.x-1-SHARE.MIN_CRANE_SAFE_DISTANCE
         return x1,x2,left,right
 
 
@@ -280,7 +280,7 @@ class World:
         ps=self.products[:]
         if len(ps)<1:
             self._rewards[SHARE.DISPATCH_CODE]-=0.1
-            logger.error('no products!')
+            logger.info('no products!')
             return
 
         have_empty=False
@@ -289,15 +289,16 @@ class World:
                 have_empty=True
                 break
         if not have_empty:
-            self._rewards[SHARE.DISPATCH_CODE]-=1
+            self._rewards[SHARE.DISPATCH_CODE]-=0.1
+            logger.info('no empty start!')
             return
         doing_jobs=self.num_jobs_in_first_group()
 
         if  doing_jobs>int(len(self.group_cranes[1])+1):
-            self._rewards[SHARE.DISPATCH_CODE]-=0.5
-            logger.error('Too much material to handle at the same time!')
+            self._rewards[SHARE.DISPATCH_CODE]-=0.01
+            logger.info('Too much material to handle at the same time!')
             return
-        if self.auto_put_starts and np.random.random()<0.99:
+        if self.auto_put_starts and np.random.random()<0.995:
             return
         
         for s in self.starts:
@@ -497,7 +498,7 @@ class World:
         for c in cranes:
             if c==crane:
                 continue
-            if abs(c.x-crane.x)<SHARE.MIN_AGENT_SAFE_DISTANCE:
+            if abs(c.x-crane.x)<SHARE.MIN_CRANE_SAFE_DISTANCE:
                 collide=True
                 logger.error(f'{c} too close to {crane}')
                 if c.last_action!=CraneAction.stay:

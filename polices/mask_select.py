@@ -9,8 +9,9 @@ class MaskSelect(RandomSelect):
         for k,info in infos.items():
             #print(k,info)
             masks=info['action_masks']
-
-            
+            # if k==SHARE.DISPATCH_CODE:
+            #     if np.random.random()<0.95:
+            #         masks[2]=0
             acts=np.argwhere(masks).ravel()
             actions[k]=random.choice(acts)
         return actions

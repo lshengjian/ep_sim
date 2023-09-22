@@ -30,10 +30,10 @@ loggers:
         level: INFO
         handlers: [file,console]
         propagate: no 
-    # cranehelper:
-    #     level: INFO
-    #     handlers: [console]
-    #     propagate: no         
+    cranehelper:
+        level: INFO
+        handlers: [file]
+        propagate: no         
 root:
     level: ERROR
     handlers: [console]

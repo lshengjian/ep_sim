@@ -35,34 +35,40 @@ class CraneHelper:
             if 0<crane.y<self.world.max_y:
                 continue
             for agv in self.world.group_cranes[crane.cfg.group]:
-                if crane==agv:continue
-                K=(SHARE.MIN_AGENT_SAFE_DISTANCE+1)**3
-                f=6.18*K*(1/(crane.x-agv.x))**3
-                crane.force+=f
+                dis =  abs(crane.x-agv.x)
+                if crane==agv or dis>SHARE.MIN_CRANE_SAFE_DISTANCE*2:continue
+                
+                f=10*(crane.x-agv.x)/dis**2
+                crane.add_force(f)
                 logger.info(f'{agv} add force:{f:.1f} to {crane}')
+
     def decision(self):
         eps=SHARE.EPS
         cranes_bound={}
         self.reset(cranes_bound)
         self._check(cranes_bound)
-        #self._push()
+        self._push()
        
         for crane in self.world.all_cranes:
             masks=self.world._masks[crane.cfg.name]
-            if crane.force>eps:
+            r,l=crane.forces
+            t=r+l
+            if t<eps:
+                continue
+            if np.random.random()<=r/t:
                 masks[CraneAction.right]=1 
-            elif crane.force<-eps:
+            else:
                 masks[CraneAction.left]=1    
             
             self.check_bound(crane,cranes_bound[crane.cfg.name])
-            logger.info(f'{crane} force:{crane.force:.1f} masks:{masks}')
+            #logger.info(f'{crane} force:{crane.force:.1f} masks:{masks}')
 
     def reset(self, cranes_bound):
         for crane in self.world.all_cranes:
             cranes_bound[crane.cfg.name]=self.world.get_crane_bound(crane)
             self.world._masks[crane.cfg.name]=np.zeros(5,dtype=np.uint8)
             self.world._masks[crane.cfg.name][CraneAction.stay]=1
-            crane.force=0
+            crane.resert_force()
 
     
     def check_middle(self,agv:Crane):
@@ -79,8 +85,6 @@ class CraneHelper:
         slot=self.world.pos_slots.get(crane.x,None)
         #print(f'before  masks:{masks}')
         if  slot !=  None :
-            
-            
             wp2:Workpiece=None if slot is None else slot.carrying
             if wp!=None and  wp.target_op_limit.op_key == slot.cfg.op_key and wp2==None:
                 masks[CraneAction.bottom]=1 
@@ -111,12 +115,12 @@ class CraneHelper:
             wp2:Workpiece=s.carrying
             if wp2!=None :
                 if s.cfg.op_key>SHARE.MIN_OP_KEY:
-                    k=2*(s.timer/wp2.target_op_limit.duration)**2
+                    k=10*(s.timer/wp2.target_op_limit.duration)**10
                 else:
                     k=0.5
             f=k*dir/(1+abs(dis)/w)
             logger.info(f'{s} add force:{f:.1f} to {crane}')
-            crane.force+=f
+            crane.add_force(f)
 
 
 
@@ -186,6 +190,7 @@ class CraneHelper:
     def get_focus_slots(self,crane:Crane,bound:Tuple[int,int,Crane,Crane]):
         x1,x2,*_=bound
         todos=[]
+        cs=[]
         for slot in self.world.group_slots[crane.cfg.group]:
             if slot.x<x1 or slot.x>x2 or slot.x == crane.x :continue
             wp:Workpiece=crane.carrying
@@ -197,10 +202,11 @@ class CraneHelper:
             elif crane.y>(self.world.max_y-SHARE.EPS) and wp is None and wp2 != None:
                next_slot=self.next_slot( wp2,x1, x2)
                if next_slot is None: continue
-               todos.append(slot)
-        if len(todos)<1:
-            return []
-        return todos
+               if slot.cfg.op_key>SHARE.MIN_OP_KEY and slot.timer>=wp2.target_op_limit.duration-10:
+                   todos.append(slot)
+               else: #if np.random.random()<0.05:
+                   cs.append(slot)
+        return todos+cs
         
   
 

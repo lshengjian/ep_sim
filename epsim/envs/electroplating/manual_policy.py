@@ -81,6 +81,8 @@ class ManualControl:
             action = key_to_action1[key]
             if self.env.world._masks[SHARE.DISPATCH_CODE][action]>0 :
                 actions[SHARE.DISPATCH_CODE]=action
+                # if np.random.random()<0.95:
+                #     actions[SHARE.DISPATCH_CODE][DispatchAction.SELECT_CUR_PRODUCT]=0
 
 
         for carne in self.env.world.all_cranes:
