@@ -79,8 +79,9 @@ class ManualControl:
         
         if key in key_to_action1 :
             action = key_to_action1[key]
-            if self.env.world._masks[SHARE.DISPATCH_CODE][action]>0 :
-                actions[SHARE.DISPATCH_CODE]=action
+            actions[SHARE.DISPATCH_CODE]=action
+            #if self.env.world._masks[SHARE.DISPATCH_CODE][action]>0 :
+            #    actions[SHARE.DISPATCH_CODE]=action
                 # if np.random.random()<0.95:
                 #     actions[SHARE.DISPATCH_CODE][DispatchAction.SELECT_CUR_PRODUCT]=0
 

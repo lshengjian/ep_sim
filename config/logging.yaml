@@ -1,5 +1,5 @@
 version: 1
-disable_existing_loggers: False
+disable_existing_loggers: true
 
 formatters:
   brief: 
@@ -18,7 +18,7 @@ handlers:
     formatter: precise
     filename: ./outputs/epsim.log
     encoding: utf-8
-    maxBytes: 1024
+    maxBytes: 120000
     backupCount: 3
 
 loggers:
