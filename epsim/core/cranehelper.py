@@ -13,13 +13,35 @@ class CraneHelper:
     def __init__(self,world): 
         self.world:W.World=world
         #print('init Dispatch')
-
+    def decision(self):
+        eps=SHARE.EPS
+        cranes_bound={}
+        self.reset(cranes_bound)
+        self._check(cranes_bound)
+        self._push()
+       
+        for crane in self.world.all_cranes:
+            masks=self.world._masks[crane.cfg.name]
+            if crane._lock!=None:
+                continue
+            r,l=crane.forces
+            t=r+l
+            if t<eps:
+                continue
+            if np.random.random()<=r/t:
+                masks[CraneAction.right]=1 
+            else:
+                masks[CraneAction.left]=1    
+            
+            self.check_bound(crane,cranes_bound[crane.cfg.name])
+            #logger.info(f'{crane} force:{crane.force:.1f} masks:{masks}')
     def _check(self,cranes_bound):
         eps=SHARE.EPS
         for crane in self.world.all_cranes:
             masks=self.world._masks[crane.cfg.name]
             if  self.check_middle(crane):
                 continue
+            if crane._lock!=None: continue
 
             bound=cranes_bound[crane.cfg.name]
             if  crane.y<eps :
@@ -42,33 +64,16 @@ class CraneHelper:
                 crane.add_force(f)
                 logger.info(f'{agv} add force:{f:.1f} to {crane}')
 
-    def decision(self):
-        eps=SHARE.EPS
-        cranes_bound={}
-        self.reset(cranes_bound)
-        self._check(cranes_bound)
-        self._push()
-       
-        for crane in self.world.all_cranes:
-            masks=self.world._masks[crane.cfg.name]
-            r,l=crane.forces
-            t=r+l
-            if t<eps:
-                continue
-            if np.random.random()<=r/t:
-                masks[CraneAction.right]=1 
-            else:
-                masks[CraneAction.left]=1    
-            
-            self.check_bound(crane,cranes_bound[crane.cfg.name])
-            #logger.info(f'{crane} force:{crane.force:.1f} masks:{masks}')
+
 
     def reset(self, cranes_bound):
         for crane in self.world.all_cranes:
+            crane.resert_force()
+            if crane._lock!=None: continue
             cranes_bound[crane.cfg.name]=self.world.get_crane_bound(crane)
             self.world._masks[crane.cfg.name]=np.zeros(5,dtype=np.uint8)
             self.world._masks[crane.cfg.name][CraneAction.stay]=1
-            crane.resert_force()
+            
 
     
     def check_middle(self,agv:Crane):
@@ -107,7 +112,7 @@ class CraneHelper:
         masks=self.world._masks[crane.cfg.name]
         x1,x2=self.world.group_limits[crane.cfg.group]
         w=abs(x2-x1)
-        #dir=set()
+        cs=[]
         for s in slots:
             dis=s.x-crane.x
             dir=dis/abs(dis)
@@ -121,6 +126,12 @@ class CraneHelper:
             f=k*dir/(1+abs(dis)/w)
             logger.info(f'{s} add force:{f:.1f} to {crane}')
             crane.add_force(f)
+            cs.append((abs(f),s))
+        cs.sort(key=lambda d:d[0],reverse=True)
+        if len(cs)>0:
+            slot=cs[0][1]
+            crane.lock(slot)
+
 
 
 

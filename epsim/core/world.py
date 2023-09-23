@@ -62,7 +62,7 @@ class World:
         self.score=0
         self.step_count=0
         self.ops_dict:Dict[int,OperateData]=None
-        
+        self.name2cranes:Dict[str,Crane]={}
         self.max_y: int = 2
         self.all_cranes:List[Crane] = []
         self.pos_slots:Dict[int,Slot] = {} #Start,End,Belt,Tank
@@ -253,7 +253,8 @@ class World:
             crane.reset()
         for slot in  self.pos_slots.values():
             slot.reset()
-        Workpiece.UID.clear()
+        Workpiece.UID={}
+        self.name2cranes={}
         self.is_timeout=False
         
     def get_crane_bound(self,crane:Crane)->Tuple[Slot|Crane,Slot|Crane]:
@@ -360,6 +361,7 @@ class World:
         for data in cranes:
             cfg:CraneData=data
             crane:Crane=Crane(cfg.offset,cfg)
+            self.name2cranes[cfg.name]=crane
             self.all_cranes.append(crane)
             self.group_cranes[cfg.group].append(crane)
         self.max_x: int = max(list(self.pos_slots.keys()))
@@ -467,6 +469,7 @@ class World:
         if type(target) is Crane:
             self._rewards[target.cfg.name]=reward
             self.plan_next(wp)
+            target.reset_lock()
 
          
         

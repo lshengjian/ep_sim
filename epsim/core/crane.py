@@ -6,13 +6,16 @@ from .componets import CraneData,State
 from .workpiece import Workpiece
 import logging
 logger = logging.getLogger(__name__.split('.')[-1])
+from .slot import Slot
 class Crane(WorldObj):
     def __init__(self,  x:int,cfg:CraneData):
         self.cfg:CraneData=cfg
-        self.timer:int=0
+        #self.timer:int=0
         self.action:CraneAction=CraneAction.stay
         self.last_action:CraneAction=CraneAction.stay
         self._forces:list=[0,0] #light,left
+        self._lock:Slot=None
+        self._lock_cnt:int=0
         super().__init__(x)
 
     
@@ -45,14 +48,24 @@ class Crane(WorldObj):
         super().reset()
         self._y=2.0
         self.timer=0
+        self._lock=None
+        self._lock_cnt=0
         self.action=CraneAction.stay
         self.last_action=CraneAction.stay
 
     def set_command(self,act:CraneAction):
         self.action=act
         self.last_action=act
+    def lock(self,slot:Slot):
+        self._lock=slot
+        slot.locked=True
+        self._lock_cnt=0
 
     def step(self):
+        if self._lock!=None:
+            self._lock_cnt+=1
+            if self._lock_cnt>SHARE.MAX_LOCK_STEPS:
+                self.reset_lock()
         if self.action==CraneAction.stay:
             return
         dir=DIR_TO_VEC[self.action]
@@ -60,6 +73,12 @@ class Crane(WorldObj):
         self._y=self._y+dir[1]*self.cfg.speed_y
         # self._y=np.clip(self._y,0,2)
         self.action=CraneAction.stay
+
+    def reset_lock(self):
+        if self._lock!=None :
+            self._lock.locked=False
+        self._lock=None
+        self._lock_cnt=0
 
     def put_in(self,wp:Workpiece):
         if wp is None:

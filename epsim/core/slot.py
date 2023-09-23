@@ -15,7 +15,7 @@ class Slot(WorldObj):#缓存及加工位
         assert x in cfg.offsets
         self.cfg:SlotData=cfg
         self.timer:int=0
-        self.locked=False
+        self.locked=False #自动调度时被天车选中时设置
         super().__init__(x)
 
     @property
@@ -47,7 +47,7 @@ class Slot(WorldObj):#缓存及加工位
         logger.debug(f'put {wp} to {self}')
         wp.attached=self
         self.carrying=wp
-        self.locked=True
+        #self.locked=True
         
 
     

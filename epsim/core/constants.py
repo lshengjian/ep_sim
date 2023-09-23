@@ -10,6 +10,7 @@ class SHARE:
     END_KEY:int=103
     MIN_OP_KEY:int=200
     MAX_OP_TIME:int=100
+    MAX_LOCK_STEPS:int=50
     OBJ_TYPE_SIZE:int=3
     OP_TYPE1_SIZE:int=3
     OP_TYPE2_SIZE:int=6

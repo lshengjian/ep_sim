@@ -2,7 +2,7 @@ from epsim.envs.myenv import MyEnv
 import gymnasium as gym
 from sb3_contrib.ppo_mask import MaskablePPO
 from epsim.core import SHARE
-#docs/
+
 import hydra
 @hydra.main(config_path="./config", config_name="args", version_base="1.3")
 def main(cfg: "DictConfig"):  # noqa: F821

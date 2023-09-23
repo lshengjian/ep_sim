@@ -80,6 +80,10 @@ class MyEnv(Env):
             masks=info['action_masks']
             if k==SHARE.DISPATCH_CODE:
                 continue
+            # agv:Crane=self.world.name2cranes[k]
+            # if agv._lock!=None:
+            #     actions[k]=agv.last_action
+            #     continue
             t=sum(masks)
 
             if t>1:
