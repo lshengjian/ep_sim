@@ -16,14 +16,26 @@ class CraneHelper:
     def decision(self):
         eps=SHARE.EPS
         cranes_bound={}
-        self.reset(cranes_bound)
-        self._check(cranes_bound)
-        self._push()
-       
         for crane in self.world.all_cranes:
+            self.reset(crane,cranes_bound)
+            #slot=crane.locked_slot
             masks=self.world._masks[crane.cfg.name]
-            if crane._lock!=None:
+
+            # if slot!=None:
+            #     #masks[CraneAction.stay]=0
+            #     if slot.x>crane.x:
+            #         masks[CraneAction.right]=1
+            #         continue
+                    
+            #     elif slot.x<crane.x:
+            #         masks[CraneAction.left]=1
+            #         continue
+                
+
+            if self._check(crane,cranes_bound):
                 continue
+            self._push(crane)
+            masks=self.world._masks[crane.cfg.name]
             r,l=crane.forces
             t=r+l
             if t<eps:
@@ -33,47 +45,44 @@ class CraneHelper:
             else:
                 masks[CraneAction.left]=1    
             
+        for crane in self.world.all_cranes:
             self.check_bound(crane,cranes_bound[crane.cfg.name])
             #logger.info(f'{crane} force:{crane.force:.1f} masks:{masks}')
-    def _check(self,cranes_bound):
+    def reset(self, crane:Crane,cranes_bound):
+        crane.resert_force()
+        #if crane.locked_slot!=None: continue
+        cranes_bound[crane.cfg.name]=self.world.get_crane_bound(crane)
+        self.world._masks[crane.cfg.name]=np.zeros(5,dtype=np.uint8)
+        self.world._masks[crane.cfg.name][CraneAction.stay]=1
+
+    def _check(self,crane:Crane,cranes_bound)->bool:
         eps=SHARE.EPS
-        for crane in self.world.all_cranes:
-            masks=self.world._masks[crane.cfg.name]
-            if  self.check_middle(crane):
-                continue
-            if crane._lock!=None: continue
-
-            bound=cranes_bound[crane.cfg.name]
-            if  crane.y<eps :
-                self.check_up_move(crane,bound)
-                #print(f'{agv} check_up_move {masks}')
-                
-            elif crane.y>self.world.max_y-eps :
-                self.check_down_move(crane,bound)
-                #print(f'{agv} check_down_move {masks}')    
-    
-    def _push(self):
-        for crane in self.world.all_cranes:
-            if 0<crane.y<self.world.max_y:
-                continue
-            for agv in self.world.group_cranes[crane.cfg.group]:
-                dis =  abs(crane.x-agv.x)
-                if crane==agv or dis>SHARE.MIN_CRANE_SAFE_DISTANCE*2:continue
-                
-                f=10*(crane.x-agv.x)/dis**2
-                crane.add_force(f)
-                logger.info(f'{agv} add force:{f:.1f} to {crane}')
-
-
-
-    def reset(self, cranes_bound):
-        for crane in self.world.all_cranes:
-            crane.resert_force()
-            if crane._lock!=None: continue
-            cranes_bound[crane.cfg.name]=self.world.get_crane_bound(crane)
-            self.world._masks[crane.cfg.name]=np.zeros(5,dtype=np.uint8)
-            self.world._masks[crane.cfg.name][CraneAction.stay]=1
+        masks=self.world._masks[crane.cfg.name]
+        if  self.check_middle(crane):
+            return True
+        bound=cranes_bound[crane.cfg.name]
+        if  crane.y<eps :
+            self.check_top_move(crane,bound)
+            #print(f'{agv} check_up_move {masks}')
             
+        elif crane.y>self.world.max_y-eps :
+            self.check_down_move(crane,bound)
+            #print(f'{agv} check_down_move {masks}')   
+        return   False
+    
+    def _push(self,crane:Crane,):
+        
+        if 0<crane.y<self.world.max_y:
+            return
+        for agv in self.world.group_cranes[crane.cfg.group]:
+            dis =  abs(crane.x-agv.x)
+            if crane==agv or dis>SHARE.MIN_CRANE_SAFE_DISTANCE*2:
+                continue
+            
+            f=10*(crane.x-agv.x)/dis**2
+            crane.add_force(f)
+            logger.info(f'{agv} add force:{f:.1f} to {crane}')
+
 
     
     def check_middle(self,agv:Crane):
@@ -83,7 +92,7 @@ class CraneHelper:
             return True
         return False
     
-    def check_up_move(self,crane:Crane,bound:Tuple[int,int,Crane,Crane] ):
+    def check_top_move(self,crane:Crane,bound:Tuple[int,int,Crane,Crane] ):
         eps=SHARE.EPS
         wp:Workpiece=crane.carrying
         masks=self.world._masks[crane.cfg.name]
@@ -93,6 +102,8 @@ class CraneHelper:
             wp2:Workpiece=None if slot is None else slot.carrying
             if wp!=None and  wp.target_op_limit.op_key == slot.cfg.op_key and wp2==None:
                 masks[CraneAction.bottom]=1 
+                masks[CraneAction.stay]=0
+                return
               
         slots=self.get_focus_slots(crane,bound)
         self.go_home_or_target(crane,  slots)
@@ -128,9 +139,10 @@ class CraneHelper:
             crane.add_force(f)
             cs.append((abs(f),s))
         cs.sort(key=lambda d:d[0],reverse=True)
-        if len(cs)>0:
-            slot=cs[0][1]
-            crane.lock(slot)
+        # if len(cs)>0:
+        #     slot=cs[0][1]
+        #     crane.lock(slot)
+        #     print(f'{crane} lock {slot}')
 
 
 
@@ -213,7 +225,7 @@ class CraneHelper:
             elif crane.y>(self.world.max_y-SHARE.EPS) and wp is None and wp2 != None:
                next_slot=self.next_slot( wp2,x1, x2)
                if next_slot is None: continue
-               if slot.cfg.op_key>SHARE.MIN_OP_KEY and slot.timer>=wp2.target_op_limit.duration-10:
+               if slot.cfg.op_key>SHARE.MIN_OP_KEY and slot.timer+abs(slot.x-crane.x)/crane.cfg.speed_x>=wp2.target_op_limit.duration:
                    todos.append(slot)
                else: #if np.random.random()<0.05:
                    cs.append(slot)
@@ -223,7 +235,7 @@ class CraneHelper:
 
     def _limit_only_up(self,crane:Crane,masks:np.ndarray)->bool:
         rt=False
-        if 0<crane.y<SHARE.MAX_Y and crane.carrying!=None:
+        if 0<crane.y<SHARE.MAX_Y and crane.carrying != None:
             masks[CraneAction.top]=1
             rt=True
         return rt

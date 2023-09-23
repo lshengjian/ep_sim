@@ -8,7 +8,7 @@ import hydra
 def main(cfg: "DictConfig"):  # noqa: F821
    env = MyEnv(render_mode="human",args=cfg)
    policy=MaskSelect(env) 
-   observation, info = env.reset(seed=123)
+   observation, info = env.reset(seed=1234)
    for k in range(10000):
       #print(info)
       actions=policy.decision(info)

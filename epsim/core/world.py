@@ -404,7 +404,7 @@ class World:
                 break 
         doing_jobs=self.num_jobs_in_first_group()
 
-        if is_full or doing_jobs>int(len(self.group_cranes[1])):
+        if is_full or doing_jobs>int(len(self.group_cranes[1])) or np.random.random()<0.95:
             #print('is_full')
             rt[DispatchAction.SELECT_CUR_PRODUCT]=0
         if len(self.products)<1:
@@ -469,7 +469,10 @@ class World:
         if type(target) is Crane:
             self._rewards[target.cfg.name]=reward
             self.plan_next(wp)
-            target.reset_lock()
+            # if target.locked_slot!=None:
+            #     print(f'{target} unlock {source}')
+            #     target.reset_lock()
+            
 
          
         

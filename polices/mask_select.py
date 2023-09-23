@@ -13,6 +13,6 @@ class MaskSelect(RandomSelect):
             #     if np.random.random()<0.95:
             #         masks[2]=0
             acts=np.argwhere(masks).ravel()
-            actions[k]=random.choice(acts)
+            actions[k]=random.choice(acts) if len(acts)>0 else 0
         return actions
 

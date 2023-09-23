@@ -14,7 +14,7 @@ class Crane(WorldObj):
         self.action:CraneAction=CraneAction.stay
         self.last_action:CraneAction=CraneAction.stay
         self._forces:list=[0,0] #light,left
-        self._lock:Slot=None
+        self.locked_slot:Slot=None
         self._lock_cnt:int=0
         super().__init__(x)
 
@@ -48,7 +48,7 @@ class Crane(WorldObj):
         super().reset()
         self._y=2.0
         self.timer=0
-        self._lock=None
+        self.locked_slot=None
         self._lock_cnt=0
         self.action=CraneAction.stay
         self.last_action=CraneAction.stay
@@ -56,16 +56,20 @@ class Crane(WorldObj):
     def set_command(self,act:CraneAction):
         self.action=act
         self.last_action=act
+
     def lock(self,slot:Slot):
-        self._lock=slot
+        if self.locked_slot!=None:
+            self.locked_slot.locked=False
+        self.locked_slot=slot
         slot.locked=True
         self._lock_cnt=0
 
     def step(self):
-        if self._lock!=None:
-            self._lock_cnt+=1
-            if self._lock_cnt>SHARE.MAX_LOCK_STEPS:
-                self.reset_lock()
+        # if self.locked_slot!=None:
+        #     self._lock_cnt+=1
+        #     if self._lock_cnt>SHARE.MAX_LOCK_STEPS:
+        #         print(f'{self} lock reset')
+        #         self.reset_lock()
         if self.action==CraneAction.stay:
             return
         dir=DIR_TO_VEC[self.action]
@@ -75,9 +79,9 @@ class Crane(WorldObj):
         self.action=CraneAction.stay
 
     def reset_lock(self):
-        if self._lock!=None :
-            self._lock.locked=False
-        self._lock=None
+        if self.locked_slot!=None :
+            self.locked_slot.locked=False
+        self.locked_slot=None
         self._lock_cnt=0
 
     def put_in(self,wp:Workpiece):
