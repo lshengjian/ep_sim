@@ -13,7 +13,7 @@ pipreqs . --encoding=utf8 --force
 
 ## crate tag
 ```
-git tag V1.1.0
+git tag V1.3.2
 ```
 
 ## push to remote
