@@ -18,9 +18,9 @@ class CraneHelper:
         cranes_bound={}
         for crane in self.world.all_cranes:
             self.reset(crane,cranes_bound)
-            #slot=crane.locked_slot
+            
             masks=self.world._masks[crane.cfg.name]
-
+            #slot=crane.locked_slot
             # if slot!=None:
             #     #masks[CraneAction.stay]=0
             #     if slot.x>crane.x:
@@ -35,6 +35,12 @@ class CraneHelper:
             if self._check(crane,cranes_bound):
                 continue
             self._push(crane)
+   
+            
+        self.go_by_force(eps, cranes_bound)
+
+    def go_by_force(self, eps, cranes_bound):
+        for crane in self.world.all_cranes:
             masks=self.world._masks[crane.cfg.name]
             r,l=crane.forces
             t=r+l
@@ -43,9 +49,7 @@ class CraneHelper:
             if np.random.random()<=r/t:
                 masks[CraneAction.right]=1 
             else:
-                masks[CraneAction.left]=1    
-            
-        for crane in self.world.all_cranes:
+                masks[CraneAction.left]=1 
             self.check_bound(crane,cranes_bound[crane.cfg.name])
             #logger.info(f'{crane} force:{crane.force:.1f} masks:{masks}')
     def reset(self, crane:Crane,cranes_bound):

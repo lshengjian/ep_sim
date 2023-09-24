@@ -49,11 +49,13 @@ get_observations()
 
 
 class World:
-    def __init__(self,config_directory='test01',max_steps=3000,auto_put_starts=False,auto_dispatch_crane=False):
+    def __init__(self,config_directory='test01',max_steps=3000,cool_down_time=100,auto_put_starts=False,auto_dispatch_crane=False):
         
         self.config_directory=config_directory
         self.auto_put_starts=auto_put_starts
         self.auto_dispatch_crane=auto_dispatch_crane
+        self.init_cool_down=cool_down_time
+        self.cool_down=cool_down_time
         self.is_over=False
         self.todo_cnt=0
         self._rewards={} #key : DP;H11;H12...
@@ -158,6 +160,8 @@ class World:
         if self.is_over or self.is_timeout:
             return
         self.step_count+=1
+        self.cool_down-=1
+        
 
         if self.step_count>self.max_steps:
             self.is_timeout=True
@@ -256,6 +260,7 @@ class World:
         Workpiece.UID={}
         self.name2cranes={}
         self.is_timeout=False
+        self.cool_down=self.init_cool_down
         
     def get_crane_bound(self,crane:Crane)->Tuple[Slot|Crane,Slot|Crane]:
         g=crane.cfg.group
@@ -404,7 +409,7 @@ class World:
                 break 
         doing_jobs=self.num_jobs_in_first_group()
 
-        if is_full or doing_jobs>int(len(self.group_cranes[1])) or np.random.random()<0.95:
+        if is_full or doing_jobs>int(len(self.group_cranes[1])) or self.cool_down>0:
             #print('is_full')
             rt[DispatchAction.SELECT_CUR_PRODUCT]=0
         if len(self.products)<1:
@@ -412,7 +417,8 @@ class World:
             rt[DispatchAction.NEXT_PRODUCT_TYPE]=0
             rt[DispatchAction.SELECT_CUR_PRODUCT]=0
         self._masks[SHARE.DISPATCH_CODE]=rt
-        #return rt
+        if self.cool_down<1:
+            self.cool_down=self.init_cool_down
 
     
 

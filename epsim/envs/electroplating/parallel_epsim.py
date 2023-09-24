@@ -47,7 +47,7 @@ class parallel_env(ParallelEnv):
         SHARE.SHORT_ALARM_TIME=args.alarm.short_time
         SHARE.LONG_ALARM_TIME=args.alarm.long_time
         SHARE.OBSERVATION_IMAGE=args.observation_image
-        self.world=World(args.data_directory,args.max_steps,args.auto_put_starts,args.auto_dispatch_crane)
+        self.world=World(args.data_directory,args.max_steps,args.cool_down_time,args.auto_put_starts,args.auto_dispatch_crane)
 
 
         ncols=args.screen_columns
