@@ -3,8 +3,6 @@ from dataclasses import dataclass as component
 from typing import Tuple
 
 
-
-
     
 @component
 class Color:
