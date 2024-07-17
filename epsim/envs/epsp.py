@@ -1,17 +1,13 @@
-from typing import List, Optional
+from typing import Optional
 import numpy as np
 import gymnasium as gym
 from gymnasium import Env, spaces
-from gymnasium.utils import seeding
 import random
 from ..core import *
-from ..core.componets import Color
-from ..core.world_object import WorldObj
-from ..core.slot import Slot
 from ..core.world import World
 from epsim.utils import *
 from .render.renderer import Renderer
-class MyEnv(Env):
+class EPSP(Env):
 
     metadata = {
         "render_modes": ["human", "ansi", "rgb_array"],
@@ -27,7 +23,7 @@ class MyEnv(Env):
     ): # noqa: F821
         
         self.args=args
-        MyEnv.metadata['render_fps']=args.fps
+        EPSP.metadata['render_fps']=args.fps
         Renderer.LANG=args.language
 
         SHARE.TILE_SIZE=args.tile_size

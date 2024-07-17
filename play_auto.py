@@ -1,12 +1,11 @@
 from epsim.core import SHARE
-from epsim.envs.myenv import MyEnv
+from epsim.envs.epsp import EPSP
 from polices import MaskSelect
 
-import numpy as np
 import hydra
 @hydra.main(config_path="./config", config_name="args", version_base="1.3")
 def main(cfg: "DictConfig"):  # noqa: F821
-   env = MyEnv(render_mode="human",args=cfg)
+   env = EPSP(render_mode="human",args=cfg)
    policy=MaskSelect(env) 
    observation, info = env.reset(seed=1234)
    for k in range(10000):

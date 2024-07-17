@@ -2,7 +2,7 @@ import gymnasium as gym
 import numpy as np
 from stable_baselines3.common.env_util import make_vec_env
 from epsim.core import SHARE
-from epsim.envs.myenv import MyEnv
+from epsim.envs.epsp import EPSP
 from sb3_contrib.common.maskable.policies import MaskableActorCriticPolicy
 from sb3_contrib.common.wrappers import ActionMasker
 from sb3_contrib.ppo_mask import MaskablePPO
@@ -16,7 +16,7 @@ def mask_fn(env: gym.Env) -> np.ndarray:
 
 @hydra.main(config_path="./config", config_name="args", version_base="1.3")
 def main(cfg: "DictConfig"):  # noqa: F821
-    vec_env = make_vec_env(lambda :ActionMasker(MyEnv(render_mode=None,args=cfg),mask_fn), n_envs=8)
+    vec_env = make_vec_env(lambda :ActionMasker(EPSP(render_mode=None,args=cfg),mask_fn), n_envs=8)
     model = MaskablePPO("MlpPolicy", vec_env, verbose=1,policy_kwargs=dict(net_arch=[256, 256, 256]))
     model.learn(total_timesteps=200000)
     model.save("models/ppo_mask")

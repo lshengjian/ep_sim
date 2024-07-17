@@ -78,6 +78,8 @@ class Renderer:
         for x,s in self.world.pos_slots.items():
             r=x//self.ncols
             c=x%self.ncols
+            if r%2==1:
+                c=self.ncols-1-c
             if x not in merges:
                 self._surface.blit(make_surface(s.image,pygame),(c*SHARE.TILE_SIZE,SHARE.TILE_SIZE*(3*(r+1)+1)))
             else:
@@ -93,6 +95,8 @@ class Renderer:
             if  x in merges: continue
             r=x//self.ncols
             c=x%self.ncols
+            if r%2==1:
+                c=self.ncols-1-c
             img=make_surface(agv.image,pygame)
             self._surface.blit(img,(c*SHARE.TILE_SIZE,(agv.y+3*(r+1))*SHARE.TILE_SIZE))
            

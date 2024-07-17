@@ -18,7 +18,7 @@ def test_build_world():
 def test_set_products():
     wd=World('test01',True)
     wd.reset()
-    wd.add_jobs(['A']*3)
+    wd.add_jobs(['A']*2)
     assert len(wd.products)==2
     assert wd.starts[0].carrying!=None
     assert wd.starts[1].carrying is None

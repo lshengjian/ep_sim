@@ -1,4 +1,4 @@
-from epsim.envs.myenv import MyEnv
+from epsim.envs.epsp import EPSP
 import gymnasium as gym
 from sb3_contrib.ppo_mask import MaskablePPO
 from epsim.core import SHARE
@@ -9,7 +9,7 @@ def main(cfg: "DictConfig"):  # noqa: F821
 
 
     model = MaskablePPO.load("models/ppo_mask")
-    env=MyEnv(render_mode='human',args=cfg)
+    env=EPSP(render_mode='human',args=cfg)
 
     
     obs ,info= env.reset(seed=123)

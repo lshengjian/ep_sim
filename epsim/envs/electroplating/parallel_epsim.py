@@ -6,7 +6,7 @@ from gymnasium.spaces import Discrete,Box
 from pettingzoo import ParallelEnv
 from pettingzoo.utils import parallel_to_aec, wrappers
 from ..render.renderer import Renderer
-from epsim.core import World,WorldObj,Slot,Crane,CraneAction,SHARE
+from epsim.core import World,SHARE
 from epsim.core.componets import Color
 from epsim.core import SHARE
 
